@@ -1,0 +1,4 @@
+{
+	"root": true,
+	"extends": ["@lynxtaa/eslint-config", "@lynxtaa/eslint-config/esm"]
+}

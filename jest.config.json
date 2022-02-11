@@ -1,0 +1,18 @@
+{
+	"resetMocks": true,
+	"testEnvironment": "node",
+	"roots": ["<rootDir>/src"],
+	"extensionsToTreatAsEsm": [".ts"],
+	"moduleNameMapper": {
+		"^(\\.{1,2}/.*)\\.js$": "$1"
+	},
+	"transform": {
+		"\\.[jt]sx?$": [
+			"babel-jest",
+			{
+				"babelrc": false,
+				"presets": ["@babel/preset-typescript"]
+			}
+		]
+	}
+}
