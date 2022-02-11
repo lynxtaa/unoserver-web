@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"target": "es2020",
+		"lib": ["esnext"],
+		"allowJs": false,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"noUncheckedIndexedAccess": true,
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"incremental": true,
+		"outDir": "build"
+	},
+	"include": ["src"]
+}

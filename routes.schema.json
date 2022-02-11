@@ -1,0 +1,15 @@
+{
+	"/convert/:format": {
+		"summary": "Converts file using LibreOffice",
+		"consumes": ["multipart/form-data"],
+		"produces": ["application/octet-stream"],
+		"params": { "format": { "type": "string" } },
+		"body": {
+			"properties": { "file": { "isFileType": true } },
+			"required": ["file"]
+		},
+		"response": {
+			"200": {}
+		}
+	}
+}
