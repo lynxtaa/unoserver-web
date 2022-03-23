@@ -11,6 +11,10 @@ curl \
 -o my.pdf
 ```
 
-## Server options
+## Container Environment
 
-See `.env.example`
+| Variable    | Description                           | Default | Required |
+| ----------- | ------------------------------------- | ------- | -------- |
+| PORT        | Application port                      | 3000    | false    |
+| MAX_WORKERS | Maximum number of LibreOffice workers | 8       | false    |
+| BASE_PATH   | Prefix path                           |         | false    |
