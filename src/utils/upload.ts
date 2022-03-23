@@ -18,7 +18,7 @@ export const upload = multer({
 			}
 		},
 		filename(req, file, cb) {
-			cb(null, `file${path.extname(file.originalname)}`)
+			cb(null, file.originalname)
 		},
 	}),
 })

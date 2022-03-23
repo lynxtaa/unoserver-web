@@ -24,7 +24,7 @@ test('/convert/docx', async () => {
 		'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 	)
 	expect(response.headers.get('content-disposition')).toBe(
-		'attachment; filename="file.docx"',
+		'attachment; filename="1.docx"',
 	)
 
 	const buffer = await response.arrayBuffer()
@@ -37,7 +37,7 @@ test('/convert/docx', async () => {
 		body: form2 as any,
 	})
 	expect(response2.headers.get('content-disposition')).toBe(
-		'attachment; filename="file.fodt"',
+		'attachment; filename="1.fodt"',
 	)
 
 	const text = await response2.text()
@@ -56,7 +56,7 @@ test('/convert/rtf', async () => {
 
 	expect(response.headers.get('content-type')).toBe('application/rtf')
 	expect(response.headers.get('content-disposition')).toBe(
-		'attachment; filename="file-1.rtf"',
+		'attachment; filename="1-1.rtf"',
 	)
 
 	const rtf = await response.text()
