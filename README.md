@@ -15,6 +15,6 @@ curl \
 
 | Variable    | Description                           | Default | Required |
 | ----------- | ------------------------------------- | ------- | -------- |
-| PORT        | Application port                      | 3000    | false    |
-| MAX_WORKERS | Maximum number of LibreOffice workers | 8       | false    |
-| BASE_PATH   | Prefix path                           |         | false    |
+| PORT        | Application port                      | 3000    | no       |
+| MAX_WORKERS | Maximum number of LibreOffice workers | 8       | no       |
+| BASE_PATH   | Prefix path                           |         | no       |
