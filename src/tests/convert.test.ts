@@ -82,4 +82,4 @@ test('parallel convertion', async () => {
 	if (error) {
 		throw error.reason
 	}
-}, 15000)
+}, 30000)
