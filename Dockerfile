@@ -11,7 +11,11 @@ RUN apt-get update && \
 
 # Libreoffice
 RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:libreoffice/ppa && \
+    apt-get update && \
     apt-get install -y --no-install-recommends libreoffice && \
+    apt-get remove -y --auto-remove software-properties-common && \
     rm -rf /var/lib/apt/lists/*
 
 # Unoserver
@@ -25,6 +29,11 @@ RUN apt-get update && \
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
+
+# Some additional MS fonts for better WMF conversion
+COPY fonts/*.ttf /usr/share/fonts/
+
+RUN fc-cache -f -v
 
 COPY package*.json ./
 
