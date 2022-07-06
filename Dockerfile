@@ -54,6 +54,6 @@ ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-stat
 RUN chmod +x /tini
 ENTRYPOINT [ "/tini", "--" ]
 
-CMD [ "npm", "start" ]
+CMD [ "node", "-r", "dotenv-safe/config", "build/index.js" ]
 
 EXPOSE 3000
