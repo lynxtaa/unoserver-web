@@ -1,12 +1,12 @@
 import { Server, IncomingMessage, ServerResponse } from 'http'
 
+import cors from '@fastify/cors'
+import swagger from '@fastify/swagger'
 import Fastify, { FastifyInstance } from 'fastify'
-import cors from 'fastify-cors'
 import multer from 'fastify-multer'
-import swagger from 'fastify-swagger'
 import pino, { P } from 'pino'
 
-import { ajvPlugin, transform } from './plugins/supportFilesInSchema.js'
+import { transform } from './plugins/supportFilesInSchema.js'
 import { routes } from './routes.js'
 import { unoserver } from './utils/unoserver.js'
 
@@ -42,7 +42,6 @@ export function createApp({
 > {
 	const fastify = Fastify({
 		trustProxy: true,
-		ajv: { plugins: [ajvPlugin] },
 		logger: pino({
 			base: null,
 			timestamp: false,

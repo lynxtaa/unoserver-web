@@ -1,5 +1,5 @@
-import { createReadStream, readFileSync } from 'fs'
-import { rm } from 'fs/promises'
+import { createReadStream } from 'fs'
+import { rm, stat } from 'fs/promises'
 import path from 'path'
 
 import contentDisposition from 'content-disposition'
@@ -11,12 +11,25 @@ import { assert } from './utils/assert.js'
 import { convertFile } from './utils/convertFile.js'
 import { upload } from './utils/upload.js'
 
-const schema = JSON.parse(readFileSync('./routes.schema.json', 'utf-8'))
-
 export const routes: FastifyPluginCallback = (app, options, next) => {
 	app.post<{ Params: { format: string } }>(
 		'/convert/:format',
-		{ preHandler: upload.single('file'), schema: schema['/convert/:format'] },
+		{
+			preHandler: upload.single('file'),
+			schema: {
+				summary: 'Converts file using LibreOffice',
+				consumes: ['multipart/form-data'],
+				produces: ['application/octet-stream'],
+				params: { format: { type: 'string' } },
+				body: {
+					properties: { file: { type: 'string', format: 'binary' } },
+					required: ['file'],
+				},
+				response: {
+					'200': {},
+				},
+			},
+		},
 		async (req, res) => {
 			assert(req.file, new httpErrors.BadRequest('Expected file'))
 
@@ -37,7 +50,12 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 			res.type(mime.lookup(req.params.format) || 'application/octet-stream')
 			res.header('Content-Disposition', contentDisposition(path.parse(targetPath).base))
 
+			const { size } = await stat(targetPath)
+			res.header('Content-Length', size)
+
 			res.send(stream)
+
+			return res
 		},
 	)
 
