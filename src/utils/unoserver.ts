@@ -31,7 +31,7 @@ export class Unoserver {
 	private async runServer() {
 		const unoserver = execa('unoserver', ['--port', String(this.port)])
 		await Promise.race([this.unoserver, await setTimeout(5000)])
-		unoserver.on('exit', () => {
+		void unoserver.on('exit', () => {
 			this.unoserver = null
 		})
 		this.unoserver = unoserver
@@ -68,5 +68,6 @@ export class Unoserver {
 }
 
 export const unoserver = new Unoserver({
+	// eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
 	maxWorkers: Number(process.env.MAX_WORKERS) || 8,
 })

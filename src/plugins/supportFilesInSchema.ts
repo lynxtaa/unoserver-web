@@ -1,5 +1,5 @@
 export const transform = (data: any): any =>
-	data.schema?.body?.properties
+	data.schema?.body?.properties !== undefined
 		? {
 				...data,
 				schema: {
@@ -7,14 +7,17 @@ export const transform = (data: any): any =>
 					body: {
 						type: 'object',
 						...data.schema.body,
-						properties: data.schema.body.properties
-							? Object.fromEntries(
-									Object.entries(data.schema.body.properties).map(([key, value]) => [
-										key,
-										(value as any).format === 'binary' ? { type: 'file' } : value,
-									]),
-							  )
-							: undefined,
+						properties:
+							data.schema.body.properties !== undefined
+								? Object.fromEntries(
+										Object.entries(
+											data.schema.body.properties as Record<string, unknown>,
+										).map(([key, value]) => [
+											key,
+											(value as any).format === 'binary' ? { type: 'file' } : value,
+										]),
+								  )
+								: undefined,
 					},
 				},
 		  }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { createReadStream } from 'fs'
 import { rm, stat } from 'fs/promises'
 import path from 'path'
@@ -31,11 +32,14 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 			},
 		},
 		async (req, res) => {
-			assert(req.file, new httpErrors.BadRequest('Expected file'))
+			assert(req.file !== undefined, new httpErrors.BadRequest('Expected file'))
 
 			const { path: srcPath, destination } = req.file
 
-			assert(srcPath && destination, 'Expected "path" and "destination"')
+			assert(
+				srcPath !== undefined && destination !== undefined,
+				'Expected "path" and "destination"',
+			)
 
 			res.raw.on('close', () => {
 				rm(destination, { recursive: true }).catch(() => {
@@ -47,7 +51,9 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 
 			const stream = createReadStream(targetPath)
 
-			res.type(mime.lookup(req.params.format) || 'application/octet-stream')
+			const mimeType = mime.lookup(req.params.format)
+
+			res.type(mimeType === false ? 'application/octet-stream' : mimeType)
 			res.header('Content-Disposition', contentDisposition(path.parse(targetPath).base))
 
 			const { size } = await stat(targetPath)

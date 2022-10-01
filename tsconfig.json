@@ -14,7 +14,8 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"incremental": true,
-		"outDir": "build"
+		"outDir": "build",
+		"types": ["vitest/globals"]
 	},
 	"include": ["src"]
 }

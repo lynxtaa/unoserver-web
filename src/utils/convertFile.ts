@@ -11,7 +11,10 @@ export async function convertFile(
 	format: string,
 ): Promise<{ targetPath: string }> {
 	const ext = extname(srcPath).toLowerCase()
-	assert(ext, new httpErrors.BadRequest("Can't detect extension for incoming file"))
+	assert(
+		ext !== '',
+		new httpErrors.BadRequest("Can't detect extension for incoming file"),
+	)
 
 	let pathWithoutExtension = srcPath.slice(0, srcPath.length - ext.length)
 

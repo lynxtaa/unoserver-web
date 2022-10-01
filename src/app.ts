@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { Server, IncomingMessage, ServerResponse } from 'http'
 
 import cors from '@fastify/cors'
@@ -45,7 +46,7 @@ export function createApp({
 		logger: pino({
 			base: null,
 			timestamp: false,
-			level: logLevel || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+			level: logLevel ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
 			transport:
 				process.env.NODE_ENV !== 'production'
 					? {
@@ -63,7 +64,7 @@ export function createApp({
 	fastify.register(swagger, {
 		exposeRoute: true,
 		swagger: {
-			basePath: basePath || undefined,
+			basePath: basePath === '' ? undefined : basePath,
 			info: {
 				title: 'unoserver-web',
 				version: '0.1.0',

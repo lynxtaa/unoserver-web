@@ -1,25 +1,32 @@
-import { AddressInfo } from 'net'
+import { AddressInfo } from 'node:net'
 
 import { FastifyInstance } from 'fastify'
-import fetch, { RequestInit, Response } from 'node-fetch'
+import { Agent, request, setGlobalDispatcher } from 'undici'
 
 import { createApp } from '../app.js'
-import { assert } from '../utils/assert.js'
 
 export type TestServer = FastifyInstance & {
-	fetch: (url: string, init?: RequestInit) => Promise<Response>
+	request: (
+		url: string,
+		init?: Parameters<typeof request>[1],
+	) => ReturnType<typeof request>
 }
 
 export async function startTestServer(): Promise<TestServer> {
 	const app = createApp({ logLevel: 'warn' }) as unknown as TestServer
 
-	await app.listen(0, 'localhost')
+	await app.listen({ port: 0, host: 'localhost' })
 
 	const { port } = app.server.address() as AddressInfo
 
-	app.fetch = async (url, init) => {
-		const response = await fetch(`http://localhost:${port}/${url}`, init)
-		assert(response.ok, `Error response ${response.status} from ${response.url}`)
+	const agent = new Agent({ keepAliveTimeout: 10, keepAliveMaxTimeout: 10 })
+	setGlobalDispatcher(agent)
+
+	app.request = async (url, init) => {
+		const response = await request(`http://localhost:${port}/${url}`, {
+			throwOnError: true,
+			...init,
+		})
 		return response
 	}
 
