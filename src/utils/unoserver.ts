@@ -1,4 +1,4 @@
-import { setTimeout } from 'timers/promises'
+import timersP from 'node:timers/promises'
 
 import { execa, ExecaChildProcess } from 'execa'
 import PQueue from 'p-queue'
@@ -30,7 +30,7 @@ export class Unoserver {
 
 	private async runServer() {
 		const unoserver = execa('unoserver', ['--port', String(this.port)])
-		await Promise.race([this.unoserver, await setTimeout(5000)])
+		await Promise.race([this.unoserver, await timersP.setTimeout(5000)])
 		void unoserver.on('exit', () => {
 			this.unoserver = null
 		})

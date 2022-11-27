@@ -30,22 +30,26 @@ RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
+RUN corepack enable && corepack prepare pnpm@7.17.1 --activate
+
 # Some additional MS fonts for better WMF conversion
 COPY fonts/*.ttf /usr/share/fonts/
 
 RUN fc-cache -f -v
 
-COPY package*.json ./
+COPY pnpm-lock.yaml ./
 
-RUN npm ci
+RUN pnpm fetch
 
 COPY . .
+
+RUN pnpm install -r --offline
 
 ARG NODE_ENV
 ENV NODE_ENV=$NODE_ENV
 
 RUN if [ "$NODE_ENV" = "production" ] ; \
-  then npm run build && npm prune --production && npm cache clean --force && rm -rf ./src ; \
+  then pnpm run build && pnpm prune --prod && rm -rf ./src ; \
   fi
 
 # helper for reaping zombie processes

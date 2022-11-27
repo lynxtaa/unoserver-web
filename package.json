@@ -8,20 +8,21 @@
   "scripts": {
     "prebuild": "rimraf build/*",
     "build": "tsc",
-    "check-format": "npm run prettier -- --check",
+    "check-format": "pnpm run prettier -- --check",
     "check-types": "tsc --noEmit",
     "dev": "tsc-watch --onSuccess \"cross-env NODE_ENV=development node -r dotenv-safe/config build/index.js\"",
-    "format": "npm run prettier -- --write",
+    "format": "pnpm run prettier -- --write",
     "lint": "eslint --ext .js,.ts src",
+    "prepare": "husky install",
     "prettier": "prettier 'src/**/*'",
     "start": "cross-env NODE_ENV=production node -r dotenv-safe/config build/index.js",
     "test": "is-ci-cli \"test:coverage\" \"test:watch\"",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
-    "validate": "npm run lint && npm run check-format && npm run check-types"
+    "validate": "pnpm run lint && pnpm run check-format && pnpm run check-types"
   },
   "simple-git-hooks": {
-    "pre-commit": "npx pretty-quick --staged"
+    "pre-commit": "pnpx pretty-quick --staged"
   },
   "prettier": "@lynxtaa/prettier-config",
   "dependencies": {
@@ -31,38 +32,36 @@
     "cross-env": "^7.0.3",
     "dotenv-safe": "^8.2.0",
     "execa": "^6.1.0",
-    "fastify": "^4.7.0",
+    "fastify": "^4.10.2",
     "fastify-multer": "^2.0.3",
     "http-errors": "^2.0.0",
     "mime-types": "^2.1.35",
     "p-queue": "7.3.0",
-    "p-retry": "^5.1.1",
-    "pino": "^8.6.1"
+    "p-retry": "^5.1.2",
+    "pino": "^8.7.0"
   },
   "devDependencies": {
-    "@lynxtaa/eslint-config": "^0.2.0",
+    "@lynxtaa/eslint-config": "^0.5.3",
     "@lynxtaa/prettier-config": "^0.1.1",
     "@types/content-disposition": "^0.5.5",
     "@types/http-errors": "^1.8.2",
     "@types/mime-types": "^2.1.1",
-    "@types/node": "^16.11.62",
+    "@types/node": "^16.18.3",
     "@types/promise-retry": "^1.1.3",
-    "@typescript-eslint/eslint-plugin": "^5.38.1",
-    "@typescript-eslint/parser": "^5.38.1",
-    "@vitest/coverage-c8": "^0.23.4",
-    "eslint": "^8.24.0",
-    "eslint-plugin-import": "^2.26.0",
+    "@vitest/coverage-c8": "^0.25.3",
+    "eslint": "^8.28.0",
+    "husky": "^8.0.2",
     "is-ci-cli": "^2.2.0",
-    "pino-pretty": "^9.1.0",
-    "prettier": "^2.7.1",
+    "pino-pretty": "^9.1.1",
+    "prettier": "^2.8.0",
     "pretty-quick": "^3.1.3",
     "rimraf": "^3.0.2",
-    "simple-git-hooks": "^2.8.0",
     "tsc-watch": "^5.0.3",
-    "typescript": "^4.8.4",
-    "undici": "^5.10.0",
-    "vitest": "^0.23.4"
+    "typescript": "^4.9.3",
+    "undici": "^5.13.0",
+    "vitest": "^0.25.3"
   },
+  "packageManager": "pnpm@7.17.1",
   "engines": {
     "node": ">=16.13.0"
   }

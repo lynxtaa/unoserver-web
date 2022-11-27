@@ -3,3 +3,4 @@ node_modules
 /tmp
 .env
 coverage
+.pnpm-store

@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 
 import { FormData, File } from 'undici'
 
@@ -6,7 +6,7 @@ import { startTestServer } from './startTestServer.js'
 
 const testServer = await startTestServer()
 
-const fixturesFolder = new URL('./fixtures', import.meta.url)
+const fixturesFolder = new URL('fixtures', import.meta.url)
 const rtfFile = new File([readFileSync(new URL(`${fixturesFolder.href}/1.rtf`))], '1.rtf')
 
 afterAll(() => testServer.close())
@@ -60,7 +60,7 @@ test('/convert/rtf', async () => {
 
 test('parallel convertion', async () => {
 	const results = await Promise.allSettled(
-		Array(100)
+		Array.from({ length: 100 })
 			.fill(null)
 			.map(async () => {
 				const form = new FormData()

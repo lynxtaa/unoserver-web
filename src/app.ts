@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { Server, IncomingMessage, ServerResponse } from 'http'
+import { Server, IncomingMessage, ServerResponse } from 'node:http'
 
 import cors from '@fastify/cors'
 import swagger from '@fastify/swagger'

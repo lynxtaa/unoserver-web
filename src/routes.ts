@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { createReadStream } from 'fs'
-import { rm, stat } from 'fs/promises'
-import path from 'path'
+import { createReadStream } from 'node:fs'
+import { rm, stat } from 'node:fs/promises'
+import path from 'node:path'
 
 import contentDisposition from 'content-disposition'
 import { FastifyPluginCallback } from 'fastify'

@@ -17,5 +17,5 @@ jobs:
       - uses: addnab/docker-run-action@v3
         with:
           image: test-image:latest
-          run: npm run validate && npm run build && npm run test:coverage
+          run: pnpm run validate && pnpm run build && pnpm run test:coverage
       - uses: codecov/codecov-action@v2

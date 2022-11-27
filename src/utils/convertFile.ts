@@ -1,4 +1,4 @@
-import { extname } from 'path'
+import path from 'node:path'
 
 import httpErrors from 'http-errors'
 
@@ -10,7 +10,7 @@ export async function convertFile(
 	srcPath: string,
 	format: string,
 ): Promise<{ targetPath: string }> {
-	const ext = extname(srcPath).toLowerCase()
+	const ext = path.extname(srcPath).toLowerCase()
 	assert(
 		ext !== '',
 		new httpErrors.BadRequest("Can't detect extension for incoming file"),
