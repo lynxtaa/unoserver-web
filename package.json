@@ -8,10 +8,10 @@
   "scripts": {
     "prebuild": "rimraf build/*",
     "build": "tsc",
-    "check-format": "pnpm run prettier -- --check",
+    "check-format": "pnpm run prettier --check",
     "check-types": "tsc --noEmit",
     "dev": "tsc-watch --onSuccess \"cross-env NODE_ENV=development node -r dotenv-safe/config build/index.js\"",
-    "format": "pnpm run prettier -- --write",
+    "format": "pnpm run prettier --write",
     "lint": "eslint --ext .js,.ts src",
     "prepare": "husky install",
     "prettier": "prettier 'src/**/*'",
@@ -61,7 +61,7 @@
     "undici": "^5.13.0",
     "vitest": "^0.25.3"
   },
-  "packageManager": "pnpm@7.17.1",
+  "packageManager": "pnpm@7.24.3",
   "engines": {
     "node": ">=16.13.0"
   }
