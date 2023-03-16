@@ -1,4 +1,8 @@
-FROM ubuntu:20.04
+FROM node:18.15.0-slim as node
+
+FROM ubuntu:22.04
+
+COPY --from=node /usr/local/ /usr/local/
 
 WORKDIR /app
 
@@ -25,12 +29,7 @@ RUN apt-get update && \
     apt-get remove -y --auto-remove python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-# NodeJS
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN corepack enable && corepack prepare pnpm@7.24.3 --activate
+RUN corepack disable && corepack enable
 
 # Some additional MS fonts for better WMF conversion
 COPY fonts/*.ttf /usr/share/fonts/

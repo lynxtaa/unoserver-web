@@ -1,8 +1,8 @@
+import assert from 'node:assert/strict'
 import path from 'node:path'
 
 import httpErrors from 'http-errors'
 
-import { assert } from './assert.js'
 import { unoserver } from './unoserver.js'
 
 /** Converts file to a new format */
