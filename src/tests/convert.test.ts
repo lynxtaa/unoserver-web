@@ -15,45 +15,53 @@ test('/convert/docx', async () => {
 	const form = new FormData()
 	form.append('file', rtfFile)
 
-	const response = await testServer.request(`convert/docx`, {
+	const response = await testServer.fetch(`convert/docx`, {
 		method: 'POST',
 		body: form,
 	})
 
-	expect(response.headers['content-type']).toBe(
+	expect(response.headers.get('content-type')).toBe(
 		'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 	)
-	expect(response.headers['content-disposition']).toBe('attachment; filename="1.docx"')
+	expect(response.headers.get('content-disposition')).toBe(
+		'attachment; filename="1.docx"',
+	)
 
-	const blob = await response.body.blob()
+	const blob = await response.blob()
 
-	const form2 = new FormData()
-	form2.append('file', new File([blob], '1.docx'))
+	{
+		const form = new FormData()
+		form.append('file', new File([blob], '1.docx'))
 
-	const response2 = await testServer.request(`convert/fodt`, {
-		method: 'POST',
-		body: form2,
-	})
-	expect(response2.headers['content-disposition']).toBe('attachment; filename="1.fodt"')
+		const response = await testServer.fetch(`convert/fodt`, {
+			method: 'POST',
+			body: form,
+		})
+		expect(response.headers.get('content-disposition')).toBe(
+			'attachment; filename="1.fodt"',
+		)
 
-	const text = await response2.body.text()
+		const text = await response.text()
 
-	expect(text).toMatch(/Hello World!/)
+		expect(text).toMatch(/Hello World!/)
+	}
 }, 15000)
 
 test('/convert/rtf', async () => {
 	const form = new FormData()
 	form.append('file', rtfFile)
 
-	const response = await testServer.request(`convert/rtf`, {
+	const response = await testServer.fetch(`convert/rtf`, {
 		method: 'POST',
 		body: form,
 	})
 
-	expect(response.headers['content-type']).toBe('application/rtf')
-	expect(response.headers['content-disposition']).toBe('attachment; filename="1-1.rtf"')
+	expect(response.headers.get('content-type')).toBe('application/rtf')
+	expect(response.headers.get('content-disposition')).toBe(
+		'attachment; filename="1-1.rtf"',
+	)
 
-	const rtf = await response.body.text()
+	const rtf = await response.text()
 
 	expect(rtf).toMatch(/Hello World!/)
 }, 15000)
@@ -65,7 +73,7 @@ test('parallel convertion', async () => {
 			.map(async () => {
 				const form = new FormData()
 				form.append('file', rtfFile)
-				return testServer.request(`convert/pdf`, { method: 'POST', body: form })
+				return testServer.fetch(`convert/pdf`, { method: 'POST', body: form })
 			}),
 	)
 

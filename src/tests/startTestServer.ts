@@ -1,15 +1,12 @@
 import { AddressInfo } from 'node:net'
 
 import { FastifyInstance } from 'fastify'
-import { Agent, request, setGlobalDispatcher } from 'undici'
+import { Agent, fetch, RequestInit, Response, setGlobalDispatcher } from 'undici'
 
 import { createApp } from '../app.js'
 
 export type TestServer = FastifyInstance & {
-	request: (
-		url: string,
-		init?: Parameters<typeof request>[1],
-	) => ReturnType<typeof request>
+	fetch: (url: string, init?: RequestInit) => Promise<Response>
 }
 
 export async function startTestServer(): Promise<TestServer> {
@@ -22,11 +19,11 @@ export async function startTestServer(): Promise<TestServer> {
 	const agent = new Agent({ keepAliveTimeout: 10, keepAliveMaxTimeout: 10 })
 	setGlobalDispatcher(agent)
 
-	app.request = async (url, init) => {
-		const response = await request(`http://localhost:${port}/${url}`, {
-			throwOnError: true,
-			...init,
-		})
+	app.fetch = async (url, init) => {
+		const response = await fetch(`http://localhost:${port}/${url}`, init)
+		if (!response.ok) {
+			throw new Error(`Bad response (${response.status})`)
+		}
 		return response
 	}
 

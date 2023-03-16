@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
+import assert from 'node:assert/strict'
 import { createReadStream } from 'node:fs'
 import { rm, stat } from 'node:fs/promises'
 import path from 'node:path'
@@ -8,7 +9,6 @@ import { FastifyPluginCallback } from 'fastify'
 import httpErrors from 'http-errors'
 import mime from 'mime-types'
 
-import { assert } from './utils/assert.js'
 import { convertFile } from './utils/convertFile.js'
 import { upload } from './utils/upload.js'
 

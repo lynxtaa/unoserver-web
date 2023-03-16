@@ -3,6 +3,7 @@ import { Server, IncomingMessage, ServerResponse } from 'node:http'
 
 import cors from '@fastify/cors'
 import swagger from '@fastify/swagger'
+import swaggerUi from '@fastify/swagger-ui'
 import Fastify, { FastifyInstance } from 'fastify'
 import multer from 'fastify-multer'
 import pino, { P } from 'pino'
@@ -62,7 +63,6 @@ export function createApp({
 	fastify.register(multer.contentParser)
 
 	fastify.register(swagger, {
-		exposeRoute: true,
 		swagger: {
 			basePath: basePath === '' ? undefined : basePath,
 			info: {
@@ -73,6 +73,11 @@ export function createApp({
 			produces: ['application/json'],
 		},
 		transform,
+	})
+
+	fastify.register(swaggerUi, {
+		routePrefix: '/documentation',
+		initOAuth: {},
 	})
 
 	fastify.get('/', (req, res) => {
