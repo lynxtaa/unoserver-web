@@ -20,11 +20,13 @@ curl \
 
 ## Container Environment
 
-| Variable    | Description                           | Default |
-| ----------- | ------------------------------------- | ------- |
-| PORT        | Application port                      | 3000    |
-| MAX_WORKERS | Maximum number of LibreOffice workers | 8       |
-| BASE_PATH   | Prefix path                           |         |
+| Variable             | Description                                                                | Default |
+| -------------------- | -------------------------------------------------------------------------- | ------- |
+| PORT                 | Application port                                                           | 3000    |
+| MAX_WORKERS          | Maximum number of LibreOffice workers                                      | 8       |
+| BASE_PATH            | Prefix path                                                                |         |
+| REQUEST_ID_HEADER    | The header name used to set the request-id                                 |         |
+| REQUEST_ID_LOG_LABEL | Defines the label used for the request identifier when logging the request | reqId   |
 
 ## Development
 
