@@ -36,14 +36,18 @@ declare module 'fastify' {
 export function createApp({
 	basePath = '',
 	logLevel,
-}: { basePath?: string; logLevel?: P.LevelWithSilent } = {}): FastifyInstance<
-	Server,
-	IncomingMessage,
-	ServerResponse,
-	P.Logger
-> {
+	requestIdHeader,
+	requestIdLogLabel,
+}: {
+	basePath?: string
+	logLevel?: P.LevelWithSilent
+	requestIdHeader?: string
+	requestIdLogLabel?: string
+} = {}): FastifyInstance<Server, IncomingMessage, ServerResponse, P.Logger> {
 	const fastify = Fastify({
 		trustProxy: true,
+		requestIdHeader,
+		requestIdLogLabel,
 		logger: pino({
 			base: null,
 			timestamp: false,
