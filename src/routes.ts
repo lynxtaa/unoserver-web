@@ -13,7 +13,7 @@ import { convertFile } from './utils/convertFile.js'
 import { upload } from './utils/upload.js'
 
 export const routes: FastifyPluginCallback = (app, options, next) => {
-	app.post<{ Params: { format: string } }>(
+	app.post<{ Params: { format: string }; Querystring: { filter: string } }>(
 		'/convert/:format',
 		{
 			preHandler: upload.single('file'),
@@ -22,6 +22,7 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 				consumes: ['multipart/form-data'],
 				produces: ['application/octet-stream'],
 				params: { format: { type: 'string' } },
+				querystring: { filter: { type: 'string' } },
 				body: {
 					properties: { file: { type: 'string', format: 'binary' } },
 					required: ['file'],
@@ -47,7 +48,11 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 				})
 			})
 
-			const { targetPath } = await convertFile(srcPath, req.params.format)
+			const { targetPath } = await convertFile(
+				srcPath,
+				req.params.format,
+				req.query.filter,
+			)
 
 			const stream = createReadStream(targetPath)
 
