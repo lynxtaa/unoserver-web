@@ -48,8 +48,9 @@ export class Unoserver {
 	 *
 	 * @param from source file
 	 * @param to target file
+	 * @param filter filter name to use during conversion process
 	 */
-	convert(from: string, to: string): Promise<void> {
+	convert(from: string, to: string, filter?: string): Promise<void> {
 		return this.queue.add(() =>
 			pRetry(
 				async () => {
@@ -57,11 +58,16 @@ export class Unoserver {
 						await this.runServer()
 					}
 
-					await execa('unoconvert', ['--port', String(this.port), from, to], {
+					const portCommandArg = ['--port', String(this.port)]
+					const filterCommandArg = filter !== undefined ? ['--filter', filter] : []
+
+					const commandArguments = [...portCommandArg, ...filterCommandArg, from, to]
+
+					await execa('unoconvert', commandArguments, {
 						timeout: this.timeout,
 					})
 				},
-				{ retries: 3 },
+				{ retries: Number(process.env.CONVERSION_RETRIES) || 3 },
 			),
 		)
 	}
