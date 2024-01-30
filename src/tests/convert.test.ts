@@ -9,7 +9,7 @@ const testServer = await startTestServer()
 const fixturesFolder = new URL('fixtures', import.meta.url)
 const rtfFile = new File([readFileSync(new URL(`${fixturesFolder.href}/1.rtf`))], '1.rtf')
 
-afterAll(() => testServer.close())
+afterAll(async () => testServer.close())
 
 test('/convert/docx', async () => {
 	const form = new FormData()

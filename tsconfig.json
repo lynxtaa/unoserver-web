@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"target": "es2020",
+		"target": "es2022",
 		"lib": ["esnext"],
 		"allowJs": false,
 		"skipLibCheck": true,
@@ -14,8 +14,9 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"incremental": true,
+		"verbatimModuleSyntax": true,
 		"outDir": "build",
-		"types": ["vitest/globals"]
+		"types": ["vitest/globals"],
 	},
-	"include": ["src"]
+	"include": ["src"],
 }

@@ -4,9 +4,9 @@ import { Server, IncomingMessage, ServerResponse } from 'node:http'
 import cors from '@fastify/cors'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
-import Fastify, { FastifyInstance } from 'fastify'
+import Fastify, { type FastifyInstance } from 'fastify'
 import multer from 'fastify-multer'
-import pino, { P } from 'pino'
+import pino, { type P } from 'pino'
 
 import { transform } from './plugins/supportFilesInSchema.js'
 import { routes } from './routes.js'
@@ -57,7 +57,7 @@ export function createApp({
 					? {
 							target: 'pino-pretty',
 							options: { colorize: true },
-					  }
+						}
 					: undefined,
 		}),
 	})

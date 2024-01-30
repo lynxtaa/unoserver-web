@@ -6,14 +6,14 @@ export default defineConfig({
 	test: {
 		mockReset: true,
 		environment: 'node',
-		root: 'src',
-		include: ['**/*.test.{ts,tsx}'],
+		include: ['src/**/*.test.{ts,tsx}'],
 		globals: true,
 		coverage: {
-			provider: 'c8',
+			provider: 'v8',
 			reporter: ['html', isCi ? 'text' : 'text-summary'],
 			all: true,
-			include: ['**/*.ts'],
+			include: ['src/**/*.ts'],
+			reportsDirectory: 'coverage',
 		},
 		snapshotFormat: {
 			escapeString: false,

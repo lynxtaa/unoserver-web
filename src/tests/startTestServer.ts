@@ -1,7 +1,7 @@
-import { AddressInfo } from 'node:net'
+import { type AddressInfo } from 'node:net'
 
-import { FastifyInstance } from 'fastify'
-import { Agent, fetch, RequestInit, Response, setGlobalDispatcher } from 'undici'
+import { type FastifyInstance } from 'fastify'
+import { Agent, fetch, type RequestInit, Response, setGlobalDispatcher } from 'undici'
 
 import { createApp } from '../app.js'
 
