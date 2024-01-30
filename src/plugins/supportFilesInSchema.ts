@@ -16,9 +16,9 @@ export const transform = (data: any): any =>
 											key,
 											(value as any).format === 'binary' ? { type: 'file' } : value,
 										]),
-								  )
+									)
 								: undefined,
 					},
 				},
-		  }
+			}
 		: data

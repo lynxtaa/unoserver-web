@@ -57,7 +57,7 @@ export function createApp({
 					? {
 							target: 'pino-pretty',
 							options: { colorize: true },
-					  }
+						}
 					: undefined,
 		}),
 	})

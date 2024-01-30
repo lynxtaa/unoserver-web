@@ -4,7 +4,7 @@ export function reusePromiseForParallelCalls<TResult>(
 ): () => Promise<TResult> {
 	let runningPromise: Promise<TResult> | null = null
 
-	return function () {
+	return async function () {
 		if (!runningPromise) {
 			runningPromise = fn().finally(() => {
 				runningPromise = null

@@ -50,8 +50,8 @@ export class Unoserver {
 	 * @param to target file
 	 * @param options conversion options
 	 */
-	convert(from: string, to: string, options?: { filter?: string }): Promise<void> {
-		return this.queue.add(() =>
+	async convert(from: string, to: string, options?: { filter?: string }): Promise<void> {
+		return this.queue.add(async () =>
 			pRetry(
 				async () => {
 					if (!this.unoserver) {
@@ -68,13 +68,17 @@ export class Unoserver {
 						timeout: this.timeout,
 					})
 				},
-				{ retries: Number(process.env.CONVERSION_RETRIES) || 3 },
+				{
+					retries:
+						process.env.CONVERSION_RETRIES !== undefined
+							? Number(process.env.CONVERSION_RETRIES)
+							: 3,
+				},
 			),
 		)
 	}
 }
 
 export const unoserver = new Unoserver({
-	// eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-	maxWorkers: Number(process.env.MAX_WORKERS) || 8,
+	maxWorkers: process.env.MAX_WORKERS !== undefined ? Number(process.env.MAX_WORKERS) : 8,
 })
