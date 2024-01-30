@@ -5,7 +5,7 @@ import { rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 
 import contentDisposition from 'content-disposition'
-import { FastifyPluginCallback } from 'fastify'
+import { type FastifyPluginCallback } from 'fastify'
 import httpErrors from 'http-errors'
 import mime from 'mime-types'
 

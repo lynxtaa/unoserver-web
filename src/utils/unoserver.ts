@@ -1,6 +1,6 @@
 import timersP from 'node:timers/promises'
 
-import { execa, ExecaChildProcess } from 'execa'
+import { execa, type ExecaChildProcess } from 'execa'
 import PQueue from 'p-queue'
 import pRetry from 'p-retry'
 
