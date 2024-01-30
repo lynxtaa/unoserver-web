@@ -48,9 +48,9 @@ export class Unoserver {
 	 *
 	 * @param from source file
 	 * @param to target file
-	 * @param filter filter name to use during conversion process
+	 * @param options conversion options
 	 */
-	convert(from: string, to: string, filter?: string): Promise<void> {
+	convert(from: string, to: string, options?: { filter?: string }): Promise<void> {
 		return this.queue.add(() =>
 			pRetry(
 				async () => {
@@ -59,7 +59,8 @@ export class Unoserver {
 					}
 
 					const portCommandArg = ['--port', String(this.port)]
-					const filterCommandArg = filter !== undefined ? ['--filter', filter] : []
+					const filterCommandArg =
+						options?.filter !== undefined ? ['--filter', options.filter] : []
 
 					const commandArguments = [...portCommandArg, ...filterCommandArg, from, to]
 

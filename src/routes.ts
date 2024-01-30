@@ -48,11 +48,9 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 				})
 			})
 
-			const { targetPath } = await convertFile(
-				srcPath,
-				req.params.format,
-				req.query.filter,
-			)
+			const { targetPath } = await convertFile(srcPath, req.params.format, {
+				filter: req.query.filter,
+			})
 
 			const stream = createReadStream(targetPath)
 
