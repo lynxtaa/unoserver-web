@@ -1,6 +1,6 @@
-FROM node:20.11.0-bullseye-slim as node
+FROM node:20.12.2-bullseye-slim as node
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 COPY --from=node /usr/local/ /usr/local/
 
@@ -24,10 +24,10 @@ RUN apt-get update && \
 
 # Unoserver
 RUN apt-get update && \
-    apt-get install -y python3-pip && \
-    pip install unoserver && \
-    apt-get remove -y --auto-remove python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+   apt-get install -y python3-pip && \
+   pip install unoserver --break-system-packages && \
+   apt-get remove -y --auto-remove python3-pip && \
+   rm -rf /var/lib/apt/lists/*
 
 RUN corepack disable && corepack enable
 

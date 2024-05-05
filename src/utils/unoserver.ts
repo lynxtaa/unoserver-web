@@ -30,7 +30,7 @@ export class Unoserver {
 
 	private async runServer() {
 		const unoserver = execa('unoserver', ['--port', String(this.port)])
-		await Promise.race([this.unoserver, await timersP.setTimeout(5000)])
+		await Promise.race([this.unoserver, timersP.setTimeout(5000)])
 		void unoserver.on('exit', () => {
 			this.unoserver = null
 		})

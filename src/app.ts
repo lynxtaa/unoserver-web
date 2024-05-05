@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { Server, IncomingMessage, ServerResponse } from 'node:http'
+import { type Server, type IncomingMessage, type ServerResponse } from 'node:http'
 
 import cors from '@fastify/cors'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import Fastify, { type FastifyInstance } from 'fastify'
 import multer from 'fastify-multer'
-import pino, { type P } from 'pino'
+import { type P, pino } from 'pino'
 
 import { transform } from './plugins/supportFilesInSchema.js'
 import { routes } from './routes.js'

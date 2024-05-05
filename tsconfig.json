@@ -9,14 +9,15 @@
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
 		"noUncheckedIndexedAccess": true,
-		"module": "ESNext",
-		"moduleResolution": "node",
+		"module": "NodeNext",
+		"moduleDetection": "force",
 		"resolveJsonModule": true,
+		"noImplicitOverride": true,
 		"isolatedModules": true,
 		"incremental": true,
 		"verbatimModuleSyntax": true,
 		"outDir": "build",
-		"types": ["vitest/globals"],
+		"types": ["vitest/globals"]
 	},
-	"include": ["src"],
+	"include": ["src"]
 }
