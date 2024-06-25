@@ -20,9 +20,6 @@
 		"test:watch": "vitest --watch",
 		"validate": "pnpm run lint && pnpm run check-format && pnpm run check-types"
 	},
-	"lint-staged": {
-		"*": "prettier --write --ignore-unknown"
-	},
 	"prettier": "@lynxtaa/prettier-config",
 	"dependencies": {
 		"@fastify/cors": "9.0.1",
