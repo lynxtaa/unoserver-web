@@ -1,6 +1,6 @@
 import timersP from 'node:timers/promises'
 
-import { execa, type ExecaChildProcess } from 'execa'
+import { execa, type ResultPromise } from 'execa'
 import PQueue from 'p-queue'
 import pRetry from 'p-retry'
 
@@ -9,7 +9,7 @@ import { reusePromiseForParallelCalls } from './reusePromiseForParallelCalls.js'
 export class Unoserver {
 	queue: PQueue
 	timeout: number
-	unoserver: ExecaChildProcess | null
+	unoserver: ResultPromise | null
 	port: number
 
 	constructor({
@@ -30,7 +30,7 @@ export class Unoserver {
 
 	private async runServer() {
 		const unoserver = execa('unoserver', ['--port', String(this.port)])
-		await Promise.race([this.unoserver, await timersP.setTimeout(5000)])
+		await Promise.race([this.unoserver, timersP.setTimeout(5000)])
 		void unoserver.on('exit', () => {
 			this.unoserver = null
 		})

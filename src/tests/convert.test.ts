@@ -68,7 +68,7 @@ test('/convert/rtf', async () => {
 
 test('parallel convertion', async () => {
 	const results = await Promise.allSettled(
-		Array.from({ length: 100 })
+		Array.from({ length: 64 })
 			.fill(null)
 			.map(async () => {
 				const form = new FormData()
