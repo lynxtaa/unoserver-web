@@ -1,4 +1,4 @@
-import timersP from 'node:timers/promises'
+import { setTimeout as wait } from 'node:timers/promises'
 
 import { execa, type ResultPromise, ExecaError } from 'execa'
 import PQueue from 'p-queue'
@@ -34,7 +34,8 @@ export class Unoserver {
 
 	private async runServer() {
 		const unoserver = execa('unoserver', ['--port', String(this.#port)])
-		await Promise.race([this.#unoserver, timersP.setTimeout(5000)])
+		await Promise.race([unoserver, wait(5000)])
+		// preventUnhandledRejections(unoserver)
 		unoserver.on('exit', () => {
 			this.#unoserver = null
 		})
