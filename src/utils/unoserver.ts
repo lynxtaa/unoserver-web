@@ -35,7 +35,6 @@ export class Unoserver {
 	private async runServer() {
 		const unoserver = execa('unoserver', ['--port', String(this.#port)])
 		await Promise.race([unoserver, wait(5000)])
-		// preventUnhandledRejections(unoserver)
 		unoserver.on('exit', () => {
 			this.#unoserver = null
 		})
@@ -74,6 +73,7 @@ export class Unoserver {
 							timeout: this.#timeout,
 						})
 					} catch (error) {
+						// https://github.com/lynxtaa/unoserver-web/issues/11
 						if (error instanceof ExecaError && error.timedOut) {
 							this.stopServer()
 						}
