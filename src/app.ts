@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import { type Server, type IncomingMessage, type ServerResponse } from 'node:http'
 
 import cors from '@fastify/cors'
