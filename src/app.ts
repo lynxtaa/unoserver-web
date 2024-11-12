@@ -3,9 +3,13 @@ import { type Server, type IncomingMessage, type ServerResponse } from 'node:htt
 import cors from '@fastify/cors'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
-import Fastify, { type FastifyInstance } from 'fastify'
+import Fastify, {
+	type FastifyBaseLogger,
+	type FastifyInstance,
+	type FastifyTypeProviderDefault,
+} from 'fastify'
 import multer from 'fastify-multer'
-import { type P, pino } from 'pino'
+import { type P } from 'pino'
 
 import { transform } from './plugins/supportFilesInSchema.js'
 import { routes } from './routes.js'
@@ -42,12 +46,18 @@ export function createApp({
 	logLevel?: P.LevelWithSilent
 	requestIdHeader?: string
 	requestIdLogLabel?: string
-} = {}): FastifyInstance<Server, IncomingMessage, ServerResponse, P.Logger> {
+} = {}): FastifyInstance<
+	Server<typeof IncomingMessage, typeof ServerResponse>,
+	IncomingMessage,
+	ServerResponse<IncomingMessage>,
+	FastifyBaseLogger,
+	FastifyTypeProviderDefault
+> {
 	const fastify = Fastify({
 		trustProxy: true,
 		requestIdHeader,
 		requestIdLogLabel,
-		logger: pino({
+		logger: {
 			base: null,
 			timestamp: false,
 			level: logLevel ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
@@ -58,7 +68,7 @@ export function createApp({
 							options: { colorize: true },
 						}
 					: undefined,
-		}),
+		},
 	})
 
 	fastify.register(cors, { origin: '*', maxAge: 60 * 60 })
