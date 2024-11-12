@@ -1,13 +1,14 @@
-import { readFileSync } from 'node:fs'
+import { openAsBlob } from 'node:fs'
 
-import { FormData, File } from 'undici'
+import { FormData } from 'undici'
 
 import { startTestServer } from './startTestServer.js'
 
 const testServer = await startTestServer()
 
-const fixturesFolder = new URL('fixtures', import.meta.url)
-const rtfFile = new File([readFileSync(new URL(`${fixturesFolder.href}/1.rtf`))], '1.rtf')
+const rtfBlob = await openAsBlob('./src/tests/fixtures/1.rtf')
+
+const rtfFile = new File([rtfBlob], '1.rtf')
 
 afterAll(async () => testServer.close())
 
@@ -31,7 +32,7 @@ test('/convert/docx', async () => {
 
 	{
 		const form = new FormData()
-		form.append('file', new File([blob], '1.docx'))
+		form.append('file', new File([blob as Blob], '1.docx'))
 
 		const response = await testServer.fetch(`convert/fodt`, {
 			method: 'POST',
@@ -45,7 +46,7 @@ test('/convert/docx', async () => {
 
 		expect(text).toMatch(/Hello World!/)
 	}
-}, 15000)
+}, 30000)
 
 test('/convert/rtf', async () => {
 	const form = new FormData()

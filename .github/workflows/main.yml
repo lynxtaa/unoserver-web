@@ -10,7 +10,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v6
         with:
           tags: test-image:latest
           push: false
@@ -18,4 +18,4 @@ jobs:
         with:
           image: test-image:latest
           run: pnpm run validate && pnpm run build && pnpm run test:coverage
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v4
