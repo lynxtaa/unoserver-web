@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import assert from 'node:assert/strict'
 import { createReadStream } from 'node:fs'
 import { rm, stat } from 'node:fs/promises'
