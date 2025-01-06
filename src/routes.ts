@@ -20,10 +20,9 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 				summary: 'Converts file using LibreOffice',
 				consumes: ['multipart/form-data'],
 				produces: ['application/octet-stream'],
-				params: { type: 'object', properties: { format: { type: 'string' } } },
-				querystring: { type: 'object', properties: { filter: { type: 'string' } } },
+				params: { format: { type: 'string' } },
+				querystring: { filter: { type: 'string' } },
 				body: {
-					type: 'object',
 					properties: { file: { type: 'string', format: 'binary' } },
 					required: ['file'],
 				},
