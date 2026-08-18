@@ -3,26 +3,32 @@ import { createReadStream } from 'node:fs'
 import { rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 
-import contentDisposition from 'content-disposition'
+import { create as createCD } from 'content-disposition'
 import { type FastifyPluginCallback } from 'fastify'
 import httpErrors from 'http-errors'
 import mime from 'mime-types'
 
 import { convertFile } from './utils/convertFile.js'
-import { upload } from './utils/upload.js'
+import { createRandomFolder } from './utils/upload.js'
 
 export const routes: FastifyPluginCallback = (app, options, next) => {
 	app.post<{ Params: { format: string }; Querystring: { filter: string } }>(
 		'/convert/:format',
 		{
-			preHandler: upload.single('file'),
 			schema: {
 				summary: 'Converts file using LibreOffice',
 				consumes: ['multipart/form-data'],
 				produces: ['application/octet-stream'],
-				params: { format: { type: 'string' } },
-				querystring: { filter: { type: 'string' } },
+				params: {
+					type: 'object',
+					properties: { format: { type: 'string' } },
+				},
+				querystring: {
+					type: 'object',
+					properties: { filter: { type: 'string' } },
+				},
 				body: {
+					type: 'object',
 					properties: { file: { type: 'string', format: 'binary' } },
 					required: ['file'],
 				},
@@ -30,22 +36,28 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 					'200': {},
 				},
 			},
+			// Trickery to satisfy schema validation
+			preValidation: (request, reply, done) => {
+				request.body = { file: '' }
+				done()
+			},
 		},
 		async (req, res) => {
-			assert(req.file !== undefined, new httpErrors.BadRequest('Expected file'))
-
-			const { path: srcPath, destination } = req.file
-
-			assert(
-				srcPath !== undefined && destination !== undefined,
-				'Expected "path" and "destination"',
-			)
+			const randomFolder = await createRandomFolder()
 
 			res.raw.on('close', () => {
-				rm(destination, { recursive: true }).catch(() => {
+				rm(randomFolder, { recursive: true }).catch(() => {
 					// ignore
 				})
 			})
+
+			const { files } = await req.saveRequestFiles({
+				tmpdir: randomFolder,
+			})
+
+			assert(files[0], new httpErrors.BadRequest('Expected file'))
+
+			const [{ filepath: srcPath, filename }] = files
 
 			const { targetPath } = await convertFile(srcPath, req.params.format, {
 				filter: req.query.filter,
@@ -56,7 +68,10 @@ export const routes: FastifyPluginCallback = (app, options, next) => {
 			const mimeType = mime.lookup(req.params.format)
 
 			res.type(mimeType === false ? 'application/octet-stream' : mimeType)
-			res.header('Content-Disposition', contentDisposition(path.parse(targetPath).base))
+			res.header(
+				'Content-Disposition',
+				createCD(path.parse(filename).name + path.parse(targetPath).ext),
+			)
 
 			const { size } = await stat(targetPath)
 			res.header('Content-Length', size)

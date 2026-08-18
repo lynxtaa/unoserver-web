@@ -1,12 +1,12 @@
-FROM node:22.11.0-bullseye-slim as node
+FROM node:24.19.0-trixie-slim AS node
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 COPY --from=node /usr/local/ /usr/local/
 
 WORKDIR /app
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Common libraries
 RUN apt-get update && \
@@ -27,16 +27,18 @@ RUN apt-get update && \
    apt-get install -y python3-pip && \
    pip install unoserver --break-system-packages && \
    apt-get remove -y --auto-remove python3-pip && \
-   rm -rf /var/lib/apt/lists/*
+   rm -rf /var/lib/apt/lists/* && \
+   libreoffice --version && unoserver --version
 
-RUN corepack disable && corepack enable
+RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg && \
+    corepack disable && corepack enable
 
 # Some additional MS fonts for better WMF conversion
 COPY fonts/*.ttf /usr/share/fonts/
 
 RUN fc-cache -f -v
 
-COPY pnpm-lock.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 
 RUN pnpm fetch
 

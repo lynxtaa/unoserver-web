@@ -1,36 +1,15 @@
 import { type Server, type IncomingMessage, type ServerResponse } from 'node:http'
 
 import cors from '@fastify/cors'
+import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
-import Fastify, { type FastifyInstance } from 'fastify'
-import multer from 'fastify-multer'
-import { type P, pino } from 'pino'
+import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify'
+import { type LevelWithSilent } from 'pino'
 
 import { transform } from './plugins/supportFilesInSchema.js'
 import { routes } from './routes.js'
 import { unoserver } from './utils/unoserver.js'
-
-// https://github.com/fox1t/fastify-multer/blob/master/typings/fastify/index.d.ts
-interface File {
-	fieldname: string
-	originalname: string
-	encoding: string
-	mimetype: string
-	size?: number
-	destination?: string
-	filename?: string
-	path?: string
-	buffer?: Buffer
-	stream?: NodeJS.ReadableStream
-}
-
-declare module 'fastify' {
-	interface FastifyRequest {
-		file: File
-		files: Record<string, File[]> | Partial<File>[]
-	}
-}
 
 export function createApp({
 	basePath = '',
@@ -39,15 +18,15 @@ export function createApp({
 	requestIdLogLabel,
 }: {
 	basePath?: string
-	logLevel?: P.LevelWithSilent
+	logLevel?: LevelWithSilent
 	requestIdHeader?: string
 	requestIdLogLabel?: string
-} = {}): FastifyInstance<Server, IncomingMessage, ServerResponse, P.Logger> {
+} = {}): FastifyInstance<Server, IncomingMessage, ServerResponse, FastifyBaseLogger> {
 	const fastify = Fastify({
 		trustProxy: true,
 		requestIdHeader,
 		requestIdLogLabel,
-		logger: pino({
+		logger: {
 			base: null,
 			timestamp: false,
 			level: logLevel ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
@@ -58,12 +37,12 @@ export function createApp({
 							options: { colorize: true },
 						}
 					: undefined,
-		}),
+		},
 	})
 
 	fastify.register(cors, { origin: '*', maxAge: 60 * 60 })
 
-	fastify.register(multer.contentParser)
+	fastify.register(multipart)
 
 	fastify.register(swagger, {
 		swagger: {
