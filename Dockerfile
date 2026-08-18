@@ -1,4 +1,4 @@
-FROM node:24.19.0-trixie-slim as node
+FROM node:24.19.0-trixie-slim AS node
 
 FROM ubuntu:26.04
 
@@ -6,7 +6,7 @@ COPY --from=node /usr/local/ /usr/local/
 
 WORKDIR /app
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Common libraries
 RUN apt-get update && \
