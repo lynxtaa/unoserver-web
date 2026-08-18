@@ -1,6 +1,6 @@
-FROM node:22.11.0-bullseye-slim as node
+FROM node:24.19.0-trixie-slim as node
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 COPY --from=node /usr/local/ /usr/local/
 
@@ -27,9 +27,11 @@ RUN apt-get update && \
    apt-get install -y python3-pip && \
    pip install unoserver --break-system-packages && \
    apt-get remove -y --auto-remove python3-pip && \
-   rm -rf /var/lib/apt/lists/*
+   rm -rf /var/lib/apt/lists/* && \
+   libreoffice --version && unoserver --version
 
-RUN corepack disable && corepack enable
+RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg && \
+    corepack disable && corepack enable
 
 # Some additional MS fonts for better WMF conversion
 COPY fonts/*.ttf /usr/share/fonts/

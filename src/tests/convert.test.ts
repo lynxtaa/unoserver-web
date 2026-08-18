@@ -24,22 +24,20 @@ test('/convert/docx', async () => {
 	expect(response.headers.get('content-type')).toBe(
 		'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 	)
-	expect(response.headers.get('content-disposition')).toBe(
-		'attachment; filename="1.docx"',
-	)
+	expect(response.headers.get('content-disposition')).toBe('attachment; filename=1.docx')
 
 	const blob = await response.blob()
 
 	{
 		const form = new FormData()
-		form.append('file', new File([blob as Blob], '1.docx'))
+		form.append('file', new File([blob], '1.docx'))
 
 		const response = await testServer.fetch(`convert/fodt`, {
 			method: 'POST',
 			body: form,
 		})
 		expect(response.headers.get('content-disposition')).toBe(
-			'attachment; filename="1.fodt"',
+			'attachment; filename=1.fodt',
 		)
 
 		const text = await response.text()
@@ -58,9 +56,7 @@ test('/convert/rtf', async () => {
 	})
 
 	expect(response.headers.get('content-type')).toBe('application/rtf')
-	expect(response.headers.get('content-disposition')).toBe(
-		'attachment; filename="1-1.rtf"',
-	)
+	expect(response.headers.get('content-disposition')).toBe('attachment; filename=1.rtf')
 
 	const rtf = await response.text()
 
@@ -69,13 +65,11 @@ test('/convert/rtf', async () => {
 
 test('parallel convertion', async () => {
 	const results = await Promise.allSettled(
-		Array.from({ length: 64 })
-			.fill(null)
-			.map(async () => {
-				const form = new FormData()
-				form.append('file', rtfFile)
-				return testServer.fetch(`convert/pdf`, { method: 'POST', body: form })
-			}),
+		Array.from({ length: 64 }, () => null).map(async () => {
+			const form = new FormData()
+			form.append('file', rtfFile)
+			return testServer.fetch(`convert/pdf`, { method: 'POST', body: form })
+		}),
 	)
 
 	const error = results.find(
