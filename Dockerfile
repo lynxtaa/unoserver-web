@@ -38,7 +38,7 @@ COPY fonts/*.ttf /usr/share/fonts/
 
 RUN fc-cache -f -v
 
-COPY pnpm-lock.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 
 RUN pnpm fetch
 
