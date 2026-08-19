@@ -1,7 +1,14 @@
-.PHONY: lint lint-fix build build-debug test testp run docs
+.PHONY: fmt fmt-check lint lint-fix build build-debug test testp run docs
+
+fmt:
+	gofmt -s -w .
+
+fmt-check:
+	test -z "$$(gofmt -s -l .)"
 
 lint:
 	golangci-lint run
+
 
 lint-fix:
 	golangci-lint run --fix
