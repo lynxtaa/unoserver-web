@@ -1,4 +1,4 @@
-.PHONY: fmt fmt-check lint lint-fix build build-debug test testp run docs
+.PHONY: fmt fmt-check lint lint-fix build build-debug test run docs
 
 fmt:
 	gofmt -s -w .
@@ -21,9 +21,6 @@ build-debug:
 
 test:
 	go test -v ./...
-
-testp:
-	gotestsum --format testname ./...
 
 run:
 	go run ./cmd/server

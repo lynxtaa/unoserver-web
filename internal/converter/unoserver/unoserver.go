@@ -4,6 +4,7 @@ package unoserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -153,12 +154,11 @@ func (u *Unoserver) Convert(ctx context.Context, from, to string, opts converter
 			defer cancel()
 
 			cmd := exec.CommandContext(cmdCtx, "unoconvert", args...)
-			err := cmd.Start()
+			err := cmd.Run()
 			if err != nil {
-				return err
-			}
-			err = cmd.Wait()
-			if err != nil {
+				if e := (&exec.ExitError{}); errors.As(err, &e) {
+					slog.ErrorContext(ctx, "unoconvert exited with non-zero code", "stderr", string(e.Stderr))
+				}
 				return err
 			}
 			return nil

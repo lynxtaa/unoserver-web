@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/lynxtaa/unoserver-web/internal/converter"
 	"github.com/lynxtaa/unoserver-web/internal/httperror"
@@ -76,16 +77,15 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := filepath.Base(targetPath)
-
 	contentType := mime.TypeByExtension(filepath.Ext(targetPath))
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
 	w.Header().Set("Content-Type", contentType)
 
+	filename, _ := strings.CutSuffix(filepath.Base(srcPath), filepath.Ext(srcPath))
 	disposition := mime.FormatMediaType("attachment", map[string]string{
-		"filename": filename,
+		"filename": filename + filepath.Ext(targetPath),
 	})
 	if disposition != "" {
 		w.Header().Set("Content-Disposition", disposition)

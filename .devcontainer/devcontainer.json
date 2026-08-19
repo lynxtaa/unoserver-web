@@ -17,7 +17,7 @@
 		}
 	},
 	"forwardPorts": [3000],
-	"postCreateCommand": "go install github.com/swaggo/swag/cmd/swag@latest gotest.tools/gotestsum@latest",
+	"postCreateCommand": "go install github.com/swaggo/swag/cmd/swag@latest",
 	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 	"runArgs": [
 		"--cap-add=SYS_PTRACE",

@@ -23,7 +23,7 @@ RUN apt-get update && \
 # Libreoffice
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
-    add-apt-repository ppa:libreoffice/ppa && \
+    add-apt-repository -y ppa:libreoffice/ppa && \
     apt-get update && \
     apt-get install -y --no-install-recommends libreoffice && \
     apt-get remove -y --auto-remove software-properties-common && \
