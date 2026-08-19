@@ -37,14 +37,12 @@ If you need to support more custom fonts, you could add them to `fonts` folder.
 
 Commands:
 
-- `pnpm run dev` - runs the app in watch-mode, then you could access a Swagger UI from `http://0.0.0.0:3000`
-- `pnpm run build && pnpm run start` - builds and starts a production version of the app
-- `pnpm run validate` - runs linting, typechecking and formatting check
-- `pnpm run test` - runs all the tests
+- `make run` - runs the app, then you could access a Swagger UI from `http://0.0.0.0:3000`
+- `make test` - runs all the tests
 
 ### Building an image
 
 ```sh
-docker build --build-arg NODE_ENV=production --tag unoserver-web:dev .
+docker build --tag unoserver-web:dev .
 docker run --rm -p 3000:3000 unoserver-web:dev
 ```

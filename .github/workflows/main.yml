@@ -62,4 +62,3 @@ jobs:
           context: .
           push: false
           tags: lynxtaa/unoserver-web:test
-

@@ -1,4 +1,4 @@
-.PHONY: fmt fmt-check lint lint-fix build build-debug test run docs
+.PHONY: fmt fmt-check lint lint-fix build test testp run docs
 
 fmt:
 	gofmt -s -w .
@@ -9,18 +9,17 @@ fmt-check:
 lint:
 	golangci-lint run
 
-
 lint-fix:
 	golangci-lint run --fix
 
 build:
 	go build -trimpath -ldflags="-s -w" -o build/server ./cmd/server
 
-build-debug:
-	go build -o build/server ./cmd/server
-
 test:
 	go test -v ./...
+
+testp:
+	gotestsum --format pkgname
 
 run:
 	go run ./cmd/server
