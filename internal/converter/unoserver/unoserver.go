@@ -3,13 +3,16 @@
 package unoserver
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,7 +22,7 @@ import (
 )
 
 const (
-	startWaitTime    = 5 * time.Second
+	startWaitTime    = 30 * time.Second
 	shutdownWaitTime = 10 * time.Second
 )
 
@@ -72,31 +75,59 @@ func (u *Unoserver) runServer(ctx context.Context) error {
 
 	slog.InfoContext(ctx, "Starting unoserver...")
 
-	// nolint gosec
-	cmd := exec.Command("unoserver", "--port", strconv.Itoa(u.port))
+	// New context is intentional otherwise unoserver will be killed after each request
+	cmd := exec.CommandContext(context.Background(), "unoserver", "--port", strconv.Itoa(u.port))
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
 
 	if err := cmd.Start(); err != nil {
 		return err
 	}
 
 	u.process = cmd.Process
+	errCh := make(chan error, 1)
 
-	exitCh := make(chan error, 1)
 	go func() {
-		exitCh <- cmd.Wait()
+		err := cmd.Wait()
+		errCh <- err
+
 		u.mu.Lock()
-		u.process = nil
-		u.mu.Unlock()
+		defer u.mu.Unlock()
+		if u.process == cmd.Process {
+			u.process = nil
+		}
 	}()
 
-	timer := time.NewTimer(startWaitTime)
-	defer timer.Stop()
+	startedCh := make(chan struct{})
+
+	go func() {
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			if strings.Contains(scanner.Text(), "unoserver:Started") {
+				close(startedCh)
+				break
+			}
+		}
+		_ = scanner.Err()
+		// Consume the rest of stdout to prevent the process from blocking
+		// when the OS pipe buffer fills up.
+		_, _ = io.Copy(io.Discard, stderr)
+	}()
 
 	select {
-	case err := <-exitCh:
-		return err
-	case <-timer.C:
+	case <-startedCh:
+		slog.InfoContext(ctx, "Unoserver started")
 		return nil
+	case err := <-errCh:
+		return fmt.Errorf("unoserver exited prematurely: %w", err)
+	case <-time.After(startWaitTime):
+		_ = cmd.Process.Kill()
+		return fmt.Errorf("timeout waiting for unoserver to start")
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }
 
@@ -131,7 +162,11 @@ func (u *Unoserver) Convert(ctx context.Context, from, to string, opts converter
 		<-u.semaphore
 	}()
 
-	if u.process == nil {
+	u.mu.Lock()
+	isRunning := u.process != nil
+	u.mu.Unlock()
+
+	if !isRunning {
 		if err := u.runServer(ctx); err != nil {
 			return fmt.Errorf("running unoserver: %w", err)
 		}
