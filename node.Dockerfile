@@ -1,15 +1,8 @@
-FROM golang:1.26-alpine AS build
+FROM node:22.11.0-bullseye-slim AS node
 
-WORKDIR /src
+FROM ubuntu:24.04
 
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/...
-
-FROM ubuntu:26.04
+COPY --from=node /usr/local/ /usr/local/
 
 WORKDIR /app
 
@@ -34,20 +27,36 @@ RUN apt-get update && \
    apt-get install -y python3-pip && \
    pip install unoserver --break-system-packages && \
    apt-get remove -y --auto-remove python3-pip && \
-   rm -rf /var/lib/apt/lists/* && \
-   libreoffice --version && unoserver --version
+   rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g corepack@latest && corepack enable
 
 # Some additional MS fonts for better WMF conversion
 COPY fonts/*.ttf /usr/share/fonts/
 
 RUN fc-cache -f -v
 
-COPY --from=build /out/server /usr/local/bin/server
+COPY pnpm-lock.yaml package.json ./
+
+RUN pnpm fetch
+
+COPY . .
+
+RUN pnpm install --offline
+
+ARG NODE_ENV
+ENV NODE_ENV=$NODE_ENV
+
+RUN if [ "$NODE_ENV" = "production" ] ; \
+  then pnpm run build && rm -rf node_modules && pnpm install --prod --ignore-scripts && pnpm store prune && rm -rf ./src ; \
+  fi
 
 # helper for reaping zombie processes
 ARG TINI_VERSION=0.19.0
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-static /tini
 RUN chmod +x /tini
 ENTRYPOINT [ "/tini", "--" ]
-CMD [ "server" ]
+
+CMD [ "node", "-r", "dotenv-safe/config", "build/index.js" ]
+
 EXPOSE 3000

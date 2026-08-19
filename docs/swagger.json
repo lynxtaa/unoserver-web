@@ -1,0 +1,83 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "unoserver-web",
+        "contact": {},
+        "version": "0.1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/convert/{format}": {
+            "post": {
+                "description": "Upload a file and convert it to the specified format",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "conversion"
+                ],
+                "summary": "Convert file to specified format",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target format (pdf, docx, odt, etc)",
+                        "name": "format",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to convert",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Export filter options",
+                        "name": "filter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Converted file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "408": {
+                        "description": "Conversion timeout",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

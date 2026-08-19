@@ -1,0 +1,55 @@
+basePath: /
+info:
+  contact: {}
+  title: unoserver-web
+  version: 0.1.0
+paths:
+  /convert/{format}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a file and convert it to the specified format
+      parameters:
+      - description: Target format (pdf, docx, odt, etc)
+        in: path
+        name: format
+        required: true
+        type: string
+      - description: File to convert
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Export filter options
+        in: query
+        name: filter
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Converted file
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "408":
+          description: Conversion timeout
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Convert file to specified format
+      tags:
+      - conversion
+swagger: "2.0"

@@ -13,7 +13,7 @@
 	"forwardPorts": [3000],
 
 	// Uncomment the next line to run commands after the container is created - for example installing curl.
-	"postCreateCommand": "apt-get update && apt-get install -y git",
+	"postCreateCommand": "apt-get update && apt-get install -y git && curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.12.2",
 
 	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
 
