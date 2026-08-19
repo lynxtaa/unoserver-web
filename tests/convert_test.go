@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -34,6 +35,7 @@ func startTestServer(t *testing.T) (*httptest.Server, func()) {
 	cfg := &config.Config{
 		MaxWorkers:  8,
 		MaxFileSize: 134217728,
+		LogLevel:    slog.LevelError,
 	}
 
 	uno := unoserver.New(unoserver.Options{
