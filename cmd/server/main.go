@@ -42,11 +42,13 @@ func run() error {
 	var handler slog.Handler
 	if cfg.PrettyLogs {
 		handler = tint.NewHandler(os.Stdout, &tint.Options{
-			Level:      slog.LevelDebug,
+			Level:      cfg.LogLevel,
 			TimeFormat: time.Kitchen,
 		})
 	} else {
-		handler = slog.NewJSONHandler(os.Stderr, nil)
+		handler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+			Level: cfg.LogLevel,
+		})
 	}
 
 	logger := slog.New(reqid.Handler(handler))
