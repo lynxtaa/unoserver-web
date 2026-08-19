@@ -2,7 +2,7 @@
 
 Web server for converting files using [unoserver](https://github.com/unoconv/unoserver)
 
-![CI/CD](https://github.com/lynxtaa/unoserver-web/workflows/CI/CD/badge.svg)
+![CI](https://github.com/lynxtaa/unoserver-web/workflows/CI/badge.svg)
 ![Codecov](https://img.shields.io/codecov/c/github/lynxtaa/unoserver-web)
 
 ## Example

@@ -9,7 +9,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/...
 
-FROM ubuntu:26.04
+FROM ubuntu:26.04 AS base
 
 WORKDIR /app
 
@@ -42,12 +42,20 @@ COPY fonts/*.ttf /usr/share/fonts/
 
 RUN fc-cache -f -v
 
-COPY --from=build /out/server /usr/local/bin/server
-
 # helper for reaping zombie processes
 ARG TINI_VERSION=0.19.0
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-static /tini
 RUN chmod +x /tini
+
+FROM base AS test
+
+COPY --from=golang:1.26 /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+FROM base AS final
+
+COPY --from=build /out/server /usr/local/bin/server
+
 ENTRYPOINT [ "/tini", "--" ]
 CMD [ "server" ]
 EXPOSE 3000

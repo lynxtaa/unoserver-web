@@ -33,11 +33,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build test image
+        uses: docker/build-push-action@v6
         with:
-          go-version-file: go.mod
+          context: .
+          target: test
+          load: true
+          push: false
+          tags: test-image:latest
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+        run: docker run --rm --volume ${{ github.workspace }}:/app --workdir /app test-image:latest go test -v -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
