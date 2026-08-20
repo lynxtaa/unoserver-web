@@ -58,7 +58,7 @@ func run() error {
 
 	uno := unoserver.New(unoserver.Options{
 		MaxWorkers:        cfg.MaxWorkers,
-		ConversionRetries: &cfg.ConversionRetries,
+		ConversionRetries: cfg.ConversionRetries,
 	})
 
 	// Deferred, so LibreOffice never outlives the server, whatever exit path is taken

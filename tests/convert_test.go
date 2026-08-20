@@ -34,8 +34,9 @@ func startTestServer(t *testing.T) (*httptest.Server, func()) {
 	t.Helper()
 
 	return startTestServerWithConfig(t, &config.Config{
-		MaxWorkers: 8,
-		LogLevel:   slog.LevelError,
+		MaxWorkers:        8,
+		ConversionRetries: 3,
+		LogLevel:          slog.LevelError,
 	})
 }
 
@@ -43,7 +44,8 @@ func startTestServerWithConfig(t *testing.T, cfg *config.Config) (*httptest.Serv
 	t.Helper()
 
 	uno := unoserver.New(unoserver.Options{
-		MaxWorkers: cfg.MaxWorkers,
+		MaxWorkers:        cfg.MaxWorkers,
+		ConversionRetries: cfg.ConversionRetries,
 	})
 
 	srv := server.NewServer(cfg, uno)

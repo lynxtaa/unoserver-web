@@ -24,6 +24,8 @@ const (
 	shutdownWaitTime  = 10 * time.Second
 	retryBaseDelay    = 1 * time.Second
 	defaultMaxWorkers = 8
+	defaultPort       = 12345
+	defaultTimeout    = 1 * time.Minute
 )
 
 // Unoserver contains everything related to `unoserver`
@@ -38,38 +40,33 @@ type Unoserver struct {
 	done chan struct{}
 }
 
-// Options are unoserver options
+// Options are unoserver options. Non-positive values fall back to defaults,
+// except ConversionRetries where zero means "don't retry".
 type Options struct {
 	MaxWorkers        int
 	Timeout           time.Duration
-	Port              *int
-	ConversionRetries *int
+	Port              int
+	ConversionRetries int
 }
 
 // New returns new unoserver
 func New(opts Options) *Unoserver {
-	maxWorkers := opts.MaxWorkers
-	if maxWorkers <= 0 {
-		maxWorkers = defaultMaxWorkers
+	if opts.MaxWorkers <= 0 {
+		opts.MaxWorkers = defaultMaxWorkers
+	}
+	if opts.Port <= 0 {
+		opts.Port = defaultPort
+	}
+	if opts.Timeout <= 0 {
+		opts.Timeout = defaultTimeout
 	}
 
-	u := &Unoserver{
-		semaphore:         make(chan struct{}, maxWorkers),
-		timeout:           1 * time.Minute,
-		port:              12345,
-		conversionRetries: 3,
+	return &Unoserver{
+		semaphore:         make(chan struct{}, opts.MaxWorkers),
+		timeout:           opts.Timeout,
+		port:              opts.Port,
+		conversionRetries: max(opts.ConversionRetries, 0),
 	}
-
-	if opts.ConversionRetries != nil {
-		u.conversionRetries = *opts.ConversionRetries
-	}
-	if opts.Port != nil {
-		u.port = *opts.Port
-	}
-	if opts.Timeout != 0 {
-		u.timeout = opts.Timeout
-	}
-	return u
 }
 
 func (u *Unoserver) runServer(ctx context.Context) error {
