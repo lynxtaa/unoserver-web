@@ -17,13 +17,13 @@ import (
 	"time"
 
 	"github.com/lynxtaa/unoserver-web/internal/converter"
-	"github.com/lynxtaa/unoserver-web/internal/process"
 )
 
 const (
-	startWaitTime    = 30 * time.Second
-	shutdownWaitTime = 10 * time.Second
-	retryBaseDelay   = 1 * time.Second
+	startWaitTime     = 30 * time.Second
+	shutdownWaitTime  = 10 * time.Second
+	retryBaseDelay    = 1 * time.Second
+	defaultMaxWorkers = 8
 )
 
 // Unoserver contains everything related to `unoserver`
@@ -34,6 +34,8 @@ type Unoserver struct {
 	port              int
 	mu                sync.Mutex
 	process           *os.Process
+	// done is closed once the running process has exited
+	done chan struct{}
 }
 
 // Options are unoserver options
@@ -46,8 +48,13 @@ type Options struct {
 
 // New returns new unoserver
 func New(opts Options) *Unoserver {
+	maxWorkers := opts.MaxWorkers
+	if maxWorkers <= 0 {
+		maxWorkers = defaultMaxWorkers
+	}
+
 	u := &Unoserver{
-		semaphore:         make(chan struct{}, opts.MaxWorkers),
+		semaphore:         make(chan struct{}, maxWorkers),
 		timeout:           1 * time.Minute,
 		port:              12345,
 		conversionRetries: 3,
@@ -87,17 +94,21 @@ func (u *Unoserver) runServer(ctx context.Context) error {
 		return err
 	}
 
+	done := make(chan struct{})
 	u.process = cmd.Process
+	u.done = done
+
 	errCh := make(chan error, 1)
 
 	go func() {
-		err := cmd.Wait()
-		errCh <- err
+		errCh <- cmd.Wait()
+		close(done)
 
 		u.mu.Lock()
 		defer u.mu.Unlock()
 		if u.process == cmd.Process {
 			u.process = nil
+			u.done = nil
 		}
 	}()
 
@@ -134,21 +145,30 @@ func (u *Unoserver) runServer(ctx context.Context) error {
 // StopServer stops `unoserver`
 func (u *Unoserver) StopServer(ctx context.Context) {
 	u.mu.Lock()
+	proc, done := u.process, u.done
+	u.mu.Unlock()
 
-	if u.process == nil {
-		u.mu.Unlock()
+	if proc == nil {
 		return
 	}
 
 	slog.InfoContext(ctx, "Shutting down unoserver...")
 
-	proc := u.process
-	u.mu.Unlock()
-
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownWaitTime)
+	// ctx is usually already cancelled by a signal, the process still gets its grace period
+	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownWaitTime)
 	defer cancel()
 
-	process.ShutdownProcess(ctx, proc)
+	if err := proc.Signal(os.Interrupt); err != nil {
+		// Already gone
+		return
+	}
+
+	select {
+	case <-done:
+	case <-shutdownCtx.Done():
+		slog.WarnContext(ctx, "Unoserver didn't exit in time, killing it")
+		_ = proc.Kill()
+	}
 
 	slog.InfoContext(ctx, "Unoserver stopped")
 }
@@ -157,7 +177,13 @@ var _ converter.Client = (*Unoserver)(nil)
 
 // Convert converts source file to target file
 func (u *Unoserver) Convert(ctx context.Context, from, to string, opts converter.ConvertOptions) error {
-	u.semaphore <- struct{}{}
+	// Queued requests give up their slot as soon as the client is gone
+	select {
+	case u.semaphore <- struct{}{}:
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
 	defer func() {
 		<-u.semaphore
 	}()

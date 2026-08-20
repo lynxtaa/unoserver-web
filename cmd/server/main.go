@@ -35,7 +35,7 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := config.Load(ctx)
+	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
@@ -57,12 +57,15 @@ func run() error {
 
 	docs.SwaggerInfo.BasePath = cmp.Or(cfg.BasePath, "/")
 
-	unoserver := unoserver.New(unoserver.Options{
+	uno := unoserver.New(unoserver.Options{
 		MaxWorkers:        cfg.MaxWorkers,
 		ConversionRetries: &cfg.ConversionRetries,
 	})
 
-	app := application.New(unoserver)
+	// Deferred, so LibreOffice never outlives the server, whatever exit path is taken
+	defer uno.StopServer(context.WithoutCancel(ctx))
+
+	app := application.New(uno)
 
 	httpServer := httpserver.NewServer(cfg, app)
 
@@ -87,10 +90,11 @@ func run() error {
 		return err
 	case <-ctx.Done():
 		slog.InfoContext(ctx, "Shutting down...")
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), gracefulShutdownTimeout)
 		defer cancel()
-		_ = srv.Shutdown(shutdownCtx)
-		unoserver.StopServer(ctx)
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			slog.WarnContext(ctx, "graceful shutdown failed", "error", err)
+		}
 	}
 
 	return nil

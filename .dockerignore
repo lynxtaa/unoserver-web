@@ -1,5 +1,15 @@
+.devcontainer
 .dockerignore
 .env
+.git
+.github
+.golangci.yml
+.husky
+.pnpm-store
 Dockerfile
-node_modules
 README.md
+build
+coverage
+coverage.txt
+node_modules
+tmp

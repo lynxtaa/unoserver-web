@@ -2,8 +2,10 @@
 package config
 
 import (
-	"context"
+	"errors"
+	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
@@ -23,12 +25,17 @@ type Config struct {
 	RequestIDLogLabel string `env:"REQUEST_ID_LOG_LABEL" envDefault:"reqId"`
 }
 
-// Load parses environment variables into a Config struct
-func Load(ctx context.Context) (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		slog.DebugContext(ctx, "No .env file found, relying on system environment variables")
+// Load parses environment variables into a Config struct. A missing .env file is
+// fine, a malformed one is an error.
+func Load() (*Config, error) {
+	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("loading .env: %w", err)
 	}
 
 	cfg := &Config{}
-	return cfg, env.Parse(cfg)
+	if err := env.Parse(cfg); err != nil {
+		return nil, fmt.Errorf("parsing environment: %w", err)
+	}
+
+	return cfg, nil
 }
