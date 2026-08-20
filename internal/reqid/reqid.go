@@ -8,9 +8,10 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"net/http"
-
-	"github.com/lynxtaa/unoserver-web/internal/config"
 )
+
+// DefaultLogLabel is the slog attribute name used when no label is configured
+const DefaultLogLabel = "reqId"
 
 type ctxKey struct{}
 
@@ -33,13 +34,14 @@ func FromContext(ctx context.Context) string {
 }
 
 // Middleware generates a request ID, stores it in the request context, and
-// echoes it in the X-Request-Id response header.
-func Middleware(cfg *config.Config) func(next http.Handler) http.Handler {
+// echoes it in the X-Request-Id response header. When headerName is not empty,
+// an incoming header of that name is used instead of a generated ID.
+func Middleware(headerName string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			id := New()
-			if cfg.RequestIDHeader != "" {
-				if reqID := r.Header.Get(cfg.RequestIDHeader); reqID != "" {
+			if headerName != "" {
+				if reqID := r.Header.Get(headerName); reqID != "" {
 					id = reqID
 				}
 			}
@@ -50,24 +52,30 @@ func Middleware(cfg *config.Config) func(next http.Handler) http.Handler {
 }
 
 // Handler wraps h so records logged with a context carrying a request ID
-// include it as the "reqId" attribute.
-func Handler(h slog.Handler) slog.Handler {
-	return &slogHandler{h}
+// include it as an attribute named logLabel (DefaultLogLabel when empty).
+func Handler(h slog.Handler, logLabel string) slog.Handler {
+	if logLabel == "" {
+		logLabel = DefaultLogLabel
+	}
+	return &slogHandler{Handler: h, logLabel: logLabel}
 }
 
-type slogHandler struct{ slog.Handler }
+type slogHandler struct {
+	slog.Handler
+	logLabel string
+}
 
 func (h *slogHandler) Handle(ctx context.Context, r slog.Record) error {
 	if id := FromContext(ctx); id != "" {
-		r.AddAttrs(slog.String("reqId", id))
+		r.AddAttrs(slog.String(h.logLabel, id))
 	}
 	return h.Handler.Handle(ctx, r)
 }
 
 func (h *slogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &slogHandler{h.Handler.WithAttrs(attrs)}
+	return &slogHandler{Handler: h.Handler.WithAttrs(attrs), logLabel: h.logLabel}
 }
 
 func (h *slogHandler) WithGroup(name string) slog.Handler {
-	return &slogHandler{h.Handler.WithGroup(name)}
+	return &slogHandler{Handler: h.Handler.WithGroup(name), logLabel: h.logLabel}
 }

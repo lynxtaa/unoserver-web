@@ -8,36 +8,59 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/lynxtaa/unoserver-web/internal/httperror"
 )
 
-// StoreSingleFile stores singe file from form-data/multipart to a new temp folder
-// and returns it's path in file system
+var (
+	errNoFile        = errors.New("no file part in request")
+	errMalformedName = errors.New("malformed filename")
+	errTooLarge      = errors.New("file too large")
+)
+
+// StoreSingleFile stores the first uploaded file from form-data/multipart to a new
+// temp folder and returns it's path in file system. Non-file fields are skipped.
+// maxSizeBytes of 0 or less means unlimited.
 func StoreSingleFile(
 	r *http.Request,
 	fieldName string,
-	maxSizeBytes int,
+	maxSizeBytes int64,
 ) (string, error) {
 	reader, err := r.MultipartReader()
 	if err != nil {
 		return "", httperror.New(err, "failed to create multipart reader", http.StatusBadRequest)
 	}
 
-	part, err := reader.NextPart()
-	if err != nil {
-		return "", httperror.New(err, "failed to read part", http.StatusBadRequest)
-	}
-	defer part.Close()
+	for {
+		part, err := reader.NextPart()
+		if errors.Is(err, io.EOF) {
+			return "", httperror.New(
+				errNoFile,
+				fmt.Sprintf("expected %q field", fieldName),
+				http.StatusBadRequest,
+			)
+		}
+		if err != nil {
+			return "", httperror.New(err, "failed to read part", http.StatusBadRequest)
+		}
 
-	if part.FormName() != fieldName {
-		return "", httperror.New(nil, fmt.Sprintf("expected %q field", fieldName), http.StatusBadRequest)
-	}
+		if part.FileName() == "" {
+			// Not a file, e.g. a plain text field
+			_ = part.Close()
+			continue
+		}
 
-	filename := part.FileName()
-	if filename == "" {
-		return "", httperror.New(nil, "filename is required", http.StatusBadRequest)
+		path, err := storeFile(part, part.FileName(), maxSizeBytes)
+		_ = part.Close()
+
+		return path, err
+	}
+}
+
+func storeFile(src io.Reader, filename string, maxSizeBytes int64) (string, error) {
+	filename = filepath.Base(filepath.Clean("/" + filename))
+	if filename == "." || filename == string(filepath.Separator) {
+		return "", httperror.New(errMalformedName, "filename is malformed", http.StatusBadRequest)
 	}
 
 	folderPath, err := os.MkdirTemp("", "upload-*")
@@ -45,11 +68,17 @@ func StoreSingleFile(
 		return "", fmt.Errorf("create temp folder: %w", err)
 	}
 
-	targetPath := filepath.Join(folderPath, filename)
-	targetPath = filepath.Clean(targetPath)
-	if !strings.HasPrefix(targetPath, folderPath) {
-		return "", httperror.New(nil, "filename is malformed", http.StatusBadRequest)
+	path, err := copyToFolder(src, folderPath, filename, maxSizeBytes)
+	if err != nil {
+		_ = os.RemoveAll(folderPath)
+		return "", err
 	}
+
+	return path, nil
+}
+
+func copyToFolder(src io.Reader, folderPath, filename string, maxSizeBytes int64) (string, error) {
+	targetPath := filepath.Join(folderPath, filename)
 
 	dst, err := os.Create(targetPath)
 	if err != nil {
@@ -57,14 +86,20 @@ func StoreSingleFile(
 	}
 	defer dst.Close()
 
-	written, err := io.CopyN(dst, part, int64(maxSizeBytes)+1)
+	if maxSizeBytes <= 0 {
+		if _, err := io.Copy(dst, src); err != nil {
+			return "", fmt.Errorf("save file: %w", err)
+		}
+		return targetPath, nil
+	}
+
+	written, err := io.CopyN(dst, src, maxSizeBytes+1)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return "", fmt.Errorf("save file: %w", err)
 	}
 
-	if written > int64(maxSizeBytes) {
-		_ = os.RemoveAll(folderPath)
-		return "", httperror.New(nil, "file too large", http.StatusRequestEntityTooLarge)
+	if written > maxSizeBytes {
+		return "", httperror.New(errTooLarge, "file too large", http.StatusRequestEntityTooLarge)
 	}
 
 	return targetPath, nil

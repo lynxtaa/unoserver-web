@@ -3,6 +3,7 @@ package http
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/lynxtaa/unoserver-web/internal/application"
 	"github.com/lynxtaa/unoserver-web/internal/config"
@@ -11,6 +12,8 @@ import (
 	"github.com/lynxtaa/unoserver-web/internal/reqid"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
+
+const documentationPath = "/documentation"
 
 // Server represents the HTTP server.
 type Server struct {
@@ -27,8 +30,19 @@ func NewServer(cfg *config.Config, application *application.App) *Server {
 		cfg:         cfg,
 	}
 
-	s.mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/documentation/index.html", http.StatusMovedPermanently)
+	basePath := strings.TrimSuffix(cfg.BasePath, "/")
+
+	s.mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, basePath+documentationPath+"/index.html", http.StatusFound)
+	})
+
+	// Aliases for URLs served by the previous Fastify implementation
+	s.mux.HandleFunc("GET /documentation/json", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, basePath+documentationPath+"/doc.json", http.StatusFound)
+	})
+
+	s.mux.HandleFunc("GET /documentation/static/{file...}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, basePath+documentationPath+"/"+r.PathValue("file"), http.StatusFound)
 	})
 
 	s.mux.HandleFunc("GET /documentation/{any...}", httpSwagger.WrapHandler)
@@ -42,7 +56,7 @@ func NewServer(cfg *config.Config, application *application.App) *Server {
 func (s *Server) Handler() http.Handler {
 	handler := http.Handler(s.mux)
 	handler = httplog.Middleware(handler)
-	handler = reqid.Middleware(s.cfg)(handler)
+	handler = reqid.Middleware(s.cfg.RequestIDHeader)(handler)
 	handler = cors.Middleware(handler)
 
 	return handler

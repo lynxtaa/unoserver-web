@@ -23,6 +23,7 @@ import (
 const (
 	startWaitTime    = 30 * time.Second
 	shutdownWaitTime = 10 * time.Second
+	retryBaseDelay   = 1 * time.Second
 )
 
 // Unoserver contains everything related to `unoserver`
@@ -161,35 +162,41 @@ func (u *Unoserver) Convert(ctx context.Context, from, to string, opts converter
 		<-u.semaphore
 	}()
 
-	u.mu.Lock()
-	isRunning := u.process != nil
-	u.mu.Unlock()
-
-	if !isRunning {
-		if err := u.runServer(ctx); err != nil {
-			return fmt.Errorf("running unoserver: %w", err)
-		}
-	}
-
 	args := []string{"--port", strconv.Itoa(u.port)}
 	if opts.Filter != "" {
 		args = append(args, "--filter", opts.Filter)
 	}
 	args = append(args, from, to)
 
-	var err error
-	for range u.conversionRetries + 1 {
+	var lastErr error
+
+	for attempt := range u.conversionRetries + 1 {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 
-		err = u.unoconvert(ctx, args)
-		if err == nil {
+		if attempt > 0 {
+			// Exponential backoff, unoserver may still be recovering
+			select {
+			case <-time.After(retryBaseDelay << (attempt - 1)):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+
+		// Checked on every attempt: unoserver could have died in between
+		if err := u.runServer(ctx); err != nil {
+			lastErr = fmt.Errorf("running unoserver: %w", err)
+			continue
+		}
+
+		lastErr = u.unoconvert(ctx, args)
+		if lastErr == nil {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("operation failed after %d retries; last error: %w", u.conversionRetries, err)
+	return fmt.Errorf("operation failed after %d retries; last error: %w", u.conversionRetries, lastErr)
 }
 
 func (u *Unoserver) unoconvert(ctx context.Context, args []string) error {

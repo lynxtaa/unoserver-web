@@ -52,30 +52,43 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lynxtaa_unoserver-web_internal_httperror.ErrorResponse"
                         }
                     },
                     "408": {
                         "description": "Conversion timeout",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lynxtaa_unoserver-web_internal_httperror.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "File too large",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_lynxtaa_unoserver-web_internal_httperror.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lynxtaa_unoserver-web_internal_httperror.ErrorResponse"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_lynxtaa_unoserver-web_internal_httperror.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
                 }
             }
         }

@@ -3,13 +3,11 @@ package http
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/lynxtaa/unoserver-web/internal/converter"
@@ -27,9 +25,10 @@ import (
 // @Param file formData file true "File to convert"
 // @Param filter query string false "Export filter options"
 // @Success 200 {file} binary "Converted file"
-// @Failure 400 {object} map[string]string
-// @Failure 408 {object} map[string]string "Conversion timeout"
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} httperror.ErrorResponse
+// @Failure 408 {object} httperror.ErrorResponse "Conversion timeout"
+// @Failure 413 {object} httperror.ErrorResponse "File too large"
+// @Failure 500 {object} httperror.ErrorResponse
 // @Router /convert/{format} [post]
 func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -42,6 +41,13 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		httperror.RespondWithError(ctx, err, w)
 		return
 	}
+
+	// Cleaned up regardless of how the request ends, the converted file lands here too
+	defer func() {
+		if err := os.RemoveAll(filepath.Dir(srcPath)); err != nil {
+			slog.WarnContext(ctx, "removing temp folder failed", "error", err)
+		}
+	}()
 
 	slog.InfoContext(ctx, "file uploaded", "path", srcPath)
 
@@ -62,13 +68,12 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// nolint gosec
+	//nolint:gosec // targetPath is derived from a temp folder created by this process
 	file, err := os.Open(targetPath)
 	if err != nil {
 		httperror.RespondWithError(ctx, err, w)
 		return
 	}
-	defer os.RemoveAll(filepath.Dir(targetPath))
 	defer file.Close()
 
 	stat, err := file.Stat()
@@ -77,11 +82,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType := mime.TypeByExtension(filepath.Ext(targetPath))
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Type", contentType(filepath.Ext(targetPath)))
 
 	filename, _ := strings.CutSuffix(filepath.Base(srcPath), filepath.Ext(srcPath))
 	disposition := mime.FormatMediaType("attachment", map[string]string{
@@ -90,12 +91,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	if disposition != "" {
 		w.Header().Set("Content-Disposition", disposition)
 	}
-	w.Header().Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
 
-	w.WriteHeader(http.StatusOK)
-
-	if _, err := io.Copy(w, file); err != nil {
-		slog.WarnContext(ctx, "write response failed", "error", err)
-		return
-	}
+	// ServeContent sets Content-Length and handles range requests
+	http.ServeContent(w, r, targetPath, stat.ModTime(), file)
 }

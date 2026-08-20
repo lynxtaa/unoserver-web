@@ -6,6 +6,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -17,7 +18,7 @@ import (
 	"time"
 
 	"github.com/lmittmann/tint"
-	_ "github.com/lynxtaa/unoserver-web/docs"
+	"github.com/lynxtaa/unoserver-web/docs"
 	"github.com/lynxtaa/unoserver-web/internal/application"
 	"github.com/lynxtaa/unoserver-web/internal/config"
 	"github.com/lynxtaa/unoserver-web/internal/converter/unoserver"
@@ -46,13 +47,15 @@ func run() error {
 			TimeFormat: time.Kitchen,
 		})
 	} else {
-		handler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: cfg.LogLevel,
 		})
 	}
 
-	logger := slog.New(reqid.Handler(handler))
+	logger := slog.New(reqid.Handler(handler, cfg.RequestIDLogLabel))
 	slog.SetDefault(logger)
+
+	docs.SwaggerInfo.BasePath = cmp.Or(cfg.BasePath, "/")
 
 	unoserver := unoserver.New(unoserver.Options{
 		MaxWorkers:        cfg.MaxWorkers,
