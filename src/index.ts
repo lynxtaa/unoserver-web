@@ -7,7 +7,9 @@ const fastify = createApp({
 	requestIdHeader: process.env.REQUEST_ID_HEADER,
 	requestIdLogLabel: process.env.REQUEST_ID_LOG_LABEL,
 	maxFileSize:
-		process.env.MAX_FILE_SIZE !== undefined ? Number(process.env.MAX_FILE_SIZE) : undefined,
+		process.env.MAX_FILE_SIZE !== undefined
+			? Number(process.env.MAX_FILE_SIZE)
+			: undefined,
 })
 
 const ALL_AVAILABLE_IPV4_INTERFACES = '0.0.0.0'
