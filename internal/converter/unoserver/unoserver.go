@@ -18,7 +18,6 @@ import (
 
 	"github.com/lynxtaa/unoserver-web/internal/converter"
 	"github.com/lynxtaa/unoserver-web/internal/process"
-	"github.com/lynxtaa/unoserver-web/internal/retry"
 )
 
 const (
@@ -178,24 +177,32 @@ func (u *Unoserver) Convert(ctx context.Context, from, to string, opts converter
 	}
 	args = append(args, from, to)
 
-	retryMinTimeout := time.Duration(0)
+	var err error
+	for range u.conversionRetries + 1 {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 
-	return retry.Do(
-		ctx,
-		u.conversionRetries,
-		retryMinTimeout,
-		func() error {
-			cmdCtx, cancel := context.WithTimeout(ctx, u.timeout)
-			defer cancel()
-
-			cmd := exec.CommandContext(cmdCtx, "unoconvert", args...)
-			err := cmd.Run()
-			if err != nil {
-				if e := (&exec.ExitError{}); errors.As(err, &e) {
-					slog.ErrorContext(ctx, "unoconvert exited with non-zero code", "stderr", string(e.Stderr))
-				}
-				return err
-			}
+		err = u.unoconvert(ctx, args)
+		if err == nil {
 			return nil
-		})
+		}
+	}
+
+	return fmt.Errorf("operation failed after %d retries; last error: %w", u.conversionRetries, err)
+}
+
+func (u *Unoserver) unoconvert(ctx context.Context, args []string) error {
+	cmdCtx, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(cmdCtx, "unoconvert", args...)
+	err := cmd.Run()
+	if err != nil {
+		if e := (&exec.ExitError{}); errors.As(err, &e) {
+			slog.ErrorContext(ctx, "unoconvert exited with non-zero code", "stderr", string(e.Stderr))
+		}
+		return err
+	}
+	return nil
 }
