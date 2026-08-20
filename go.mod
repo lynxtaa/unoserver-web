@@ -8,7 +8,6 @@ require (
 	github.com/lmittmann/tint v1.2.0
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	github.com/swaggo/swag v1.16.6
-	gotest.tools/gotestsum v1.13.0
 )
 
 require (
@@ -47,5 +46,11 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gotest.tools/gotestsum v1.13.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
+)
+
+tool (
+	github.com/swaggo/swag/cmd/swag
+	gotest.tools/gotestsum
 )

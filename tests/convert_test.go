@@ -11,6 +11,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -42,6 +43,11 @@ func startTestServer(t *testing.T) (*httptest.Server, func()) {
 
 func startTestServerWithConfig(t *testing.T, cfg *config.Config) (*httptest.Server, func()) {
 	t.Helper()
+
+	// The app logs through the default logger, otherwise cfg.LogLevel is ignored here
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: cfg.LogLevel,
+	})))
 
 	uno := unoserver.New(unoserver.Options{
 		MaxWorkers:        cfg.MaxWorkers,

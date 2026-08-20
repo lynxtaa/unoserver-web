@@ -19,10 +19,10 @@ test:
 	go test -v ./...
 
 testp:
-	go run gotest.tools/gotestsum --format pkgname
+	go tool gotestsum --format pkgname
 
 run:
 	go run ./cmd/server
 
 docs:
-	go run github.com/swaggo/swag/cmd/swag init --generalInfo cmd/server/main.go --output docs --parseDependency --parseInternal
+	go tool swag init --generalInfo cmd/server/main.go --output docs --parseDependency --parseInternal
