@@ -52,6 +52,11 @@ FROM base AS test
 COPY --from=golang:1.26 /usr/local/go /usr/local/go
 ENV PATH="/usr/local/go/bin:${PATH}"
 
+# gcc is required by the race detector
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libc6-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 FROM base AS final
 
 COPY --from=build /out/server /usr/local/bin/server

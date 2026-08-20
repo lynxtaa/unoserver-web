@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  GOLANGCI_LINT_VERSION: v2.12.2
+
 jobs:
   lint:
     name: Format & Lint
@@ -24,7 +27,7 @@ jobs:
             exit 1
           fi
       - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${{ env.GOLANGCI_LINT_VERSION }}
       - name: Run golangci-lint
         run: golangci-lint run
 
@@ -44,7 +47,7 @@ jobs:
           push: false
           tags: test-image:latest
       - name: Run tests
-        run: docker run --rm --volume ${{ github.workspace }}:/app --workdir /app test-image:latest go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+        run: docker run --rm --volume ${{ github.workspace }}:/app --workdir /app test-image:latest go test -race -count=1 -v -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:

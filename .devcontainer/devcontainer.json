@@ -1,11 +1,14 @@
 {
 	"name": "unoserver-web",
-	"dockerFile": "../Dockerfile",
-	"context": "..",
+	"build": {
+		"dockerfile": "../Dockerfile",
+		"context": "..",
+		"target": "test"
+	},
 	"features": {
 		"ghcr.io/devcontainers/features/go:1": {
 			"version": "1.26",
-			"golangciLintVersion": "latest"
+			"golangciLintVersion": "2.12.2"
 		},
 		"ghcr.io/devcontainers/features/git:1": {}
 	},

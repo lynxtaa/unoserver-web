@@ -16,7 +16,7 @@ build:
 	go build -trimpath -ldflags="-s -w" -o build/server ./cmd/server
 
 test:
-	go test -v ./...
+	go test -race -count=1 -v ./...
 
 testp:
 	go tool gotestsum --format pkgname
