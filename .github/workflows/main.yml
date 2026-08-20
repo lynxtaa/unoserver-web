@@ -47,7 +47,7 @@ jobs:
           push: false
           tags: test-image:latest
       - name: Run tests
-        run: docker run --rm --volume ${{ github.workspace }}:/app --workdir /app test-image:latest go test -race -count=1 -v -coverprofile=coverage.txt -covermode=atomic ./...
+        run: docker run --rm --volume ${{ github.workspace }}:/app --workdir /app test-image:latest go test -race -count=1 -v -coverpkg=./internal/... -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage
         uses: codecov/codecov-action@v7
         with:
