@@ -19,29 +19,30 @@ var (
 )
 
 // StoreSingleFile stores the first uploaded file from form-data/multipart to a new
-// temp folder and returns it's path in file system. Non-file fields are skipped.
-// maxSizeBytes of 0 or less means unlimited.
+// temp folder and returns it's path in file system along with a cleanup function
+// removing that folder. Non-file fields are skipped. maxSizeBytes of 0 or less
+// means unlimited.
 func StoreSingleFile(
 	r *http.Request,
 	fieldName string,
 	maxSizeBytes int64,
-) (string, error) {
+) (path string, cleanup func() error, err error) {
 	reader, err := r.MultipartReader()
 	if err != nil {
-		return "", httperror.New(err, "failed to create multipart reader", http.StatusBadRequest)
+		return "", nil, httperror.New(err, "failed to create multipart reader", http.StatusBadRequest)
 	}
 
 	for {
 		part, err := reader.NextPart()
 		if errors.Is(err, io.EOF) {
-			return "", httperror.New(
+			return "", nil, httperror.New(
 				errNoFile,
 				fmt.Sprintf("expected %q field", fieldName),
 				http.StatusBadRequest,
 			)
 		}
 		if err != nil {
-			return "", httperror.New(err, "failed to read part", http.StatusBadRequest)
+			return "", nil, httperror.New(err, "failed to read part", http.StatusBadRequest)
 		}
 
 		if part.FileName() == "" {
@@ -50,36 +51,43 @@ func StoreSingleFile(
 			continue
 		}
 
-		path, err := storeFile(part, part.FileName(), maxSizeBytes)
+		path, cleanup, err := storeFile(part, part.FileName(), maxSizeBytes)
 		_ = part.Close()
 
-		return path, err
+		return path, cleanup, err
 	}
 }
 
-func storeFile(src io.Reader, filename string, maxSizeBytes int64) (string, error) {
+func storeFile(
+	src io.Reader,
+	filename string,
+	maxSizeBytes int64,
+) (path string, cleanup func() error, err error) {
 	filename = filepath.Base(filepath.Clean("/" + filename))
 	if filename == "." || filename == string(filepath.Separator) {
-		return "", httperror.New(errMalformedName, "filename is malformed", http.StatusBadRequest)
+		return "", nil, httperror.New(errMalformedName, "filename is malformed", http.StatusBadRequest)
 	}
 
 	folderPath, err := os.MkdirTemp("", "upload-*")
 	if err != nil {
-		return "", fmt.Errorf("create temp folder: %w", err)
+		return "", nil, fmt.Errorf("create temp folder: %w", err)
 	}
 
-	path, err := copyToFolder(src, folderPath, filename, maxSizeBytes)
+	cleanup = func() error { return os.RemoveAll(folderPath) }
+
+	path, err = copyToFolder(src, folderPath, filename, maxSizeBytes)
 	if err != nil {
-		_ = os.RemoveAll(folderPath)
-		return "", err
+		_ = cleanup()
+		return "", nil, err
 	}
 
-	return path, nil
+	return path, cleanup, nil
 }
 
 func copyToFolder(src io.Reader, folderPath, filename string, maxSizeBytes int64) (string, error) {
 	targetPath := filepath.Join(folderPath, filename)
 
+	//nolint:gosec // filename is base-named and folderPath is a fresh temp folder
 	dst, err := os.Create(targetPath)
 	if err != nil {
 		return "", fmt.Errorf("create file: %w", err)

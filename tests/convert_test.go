@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -18,6 +19,7 @@ import (
 	"github.com/lynxtaa/unoserver-web/internal/config"
 	"github.com/lynxtaa/unoserver-web/internal/converter/unoserver"
 	httpserver "github.com/lynxtaa/unoserver-web/internal/http"
+	"github.com/lynxtaa/unoserver-web/internal/httperror"
 )
 
 //go:embed fixtures/1.rtf
@@ -32,11 +34,14 @@ type testResponse struct {
 func startTestServer(t *testing.T) (*httptest.Server, func()) {
 	t.Helper()
 
-	cfg := &config.Config{
-		MaxWorkers:  8,
-		MaxFileSize: 134217728,
-		LogLevel:    slog.LevelError,
-	}
+	return startTestServerWithConfig(t, &config.Config{
+		MaxWorkers: 8,
+		LogLevel:   slog.LevelError,
+	})
+}
+
+func startTestServerWithConfig(t *testing.T, cfg *config.Config) (*httptest.Server, func()) {
+	t.Helper()
 
 	uno := unoserver.New(unoserver.Options{
 		MaxWorkers: cfg.MaxWorkers,
@@ -162,6 +167,100 @@ func TestConvertRtf(t *testing.T) {
 
 	if !strings.Contains(string(res.body), "Hello World!") {
 		t.Errorf("expected body to contain 'Hello World!', got %s", string(res.body))
+	}
+}
+
+// bigRtf builds an RTF document larger than 1 MiB
+func bigRtf() []byte {
+	const paragraph = `\pard\sa200\sl276\slmult1\f0\fs22\lang9 Hello World!\par` + "\n"
+
+	var buf bytes.Buffer
+	buf.WriteString(`{\rtf1\ansi\deff0{\fonttbl{\f0\fnil\fcharset0 Calibri;}}` + "\n")
+	for range 30_000 {
+		buf.WriteString(paragraph)
+	}
+	buf.WriteString("}")
+
+	return buf.Bytes()
+}
+
+func TestConvertBiggerThan1MiB(t *testing.T) {
+	ts, cleanup := startTestServer(t)
+	defer cleanup()
+
+	data := bigRtf()
+	if len(data) <= 1024*1024 {
+		t.Fatalf("expected fixture bigger than 1 MiB, got %d bytes", len(data))
+	}
+
+	res, err := postFile(ts.Client(), ts.URL+"/convert/rtf", "big.rtf", data)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.statusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", res.statusCode, string(res.body))
+	}
+}
+
+func TestFileTooLarge(t *testing.T) {
+	ts, cleanup := startTestServerWithConfig(t, &config.Config{
+		MaxWorkers:  8,
+		MaxFileSize: 1024,
+		LogLevel:    slog.LevelError,
+	})
+	defer cleanup()
+
+	res, err := postFile(ts.Client(), ts.URL+"/convert/pdf", "big.rtf", bigRtf())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.statusCode != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected 413, got %d: %s", res.statusCode, string(res.body))
+	}
+}
+
+func TestMissingFileReturnsJSONError(t *testing.T) {
+	ts, cleanup := startTestServer(t)
+	defer cleanup()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := writer.WriteField("filter", "writer_pdf_Export"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+"/convert/pdf", &body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", res.StatusCode)
+	}
+
+	if contentType := res.Header.Get("Content-Type"); contentType != "application/json; charset=utf-8" {
+		t.Errorf("expected JSON content type, got %s", contentType)
+	}
+
+	var errRes httperror.ErrorResponse
+	if err := json.NewDecoder(res.Body).Decode(&errRes); err != nil {
+		t.Fatalf("decoding error response: %v", err)
+	}
+
+	if errRes.StatusCode != http.StatusBadRequest || errRes.Message != `expected "file" field` {
+		t.Errorf("unexpected error response: %+v", errRes)
 	}
 }
 

@@ -41,8 +41,8 @@ func NewServer(cfg *config.Config, application *application.App) *Server {
 		http.Redirect(w, r, basePath+documentationPath+"/doc.json", http.StatusFound)
 	})
 
-	s.mux.HandleFunc("GET /documentation/static/{file...}", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, basePath+documentationPath+"/"+r.PathValue("file"), http.StatusFound)
+	s.mux.HandleFunc("GET /documentation/static/index.html", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, basePath+documentationPath+"/index.html", http.StatusFound)
 	})
 
 	s.mux.HandleFunc("GET /documentation/{any...}", httpSwagger.WrapHandler)

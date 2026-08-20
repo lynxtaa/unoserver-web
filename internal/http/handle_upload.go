@@ -36,15 +36,15 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	format := r.PathValue("format")
 	filter := r.URL.Query().Get("filter")
 
-	srcPath, err := multipart.StoreSingleFile(r, "file", s.cfg.MaxFileSize)
+	srcPath, cleanup, err := multipart.StoreSingleFile(r, "file", s.cfg.MaxFileSize)
 	if err != nil {
 		httperror.RespondWithError(ctx, err, w)
 		return
 	}
 
-	// Cleaned up regardless of how the request ends, the converted file lands here too
+	// Runs regardless of how the request ends, the converted file lands in the same folder
 	defer func() {
-		if err := os.RemoveAll(filepath.Dir(srcPath)); err != nil {
+		if err := cleanup(); err != nil {
 			slog.WarnContext(ctx, "removing temp folder failed", "error", err)
 		}
 	}()
