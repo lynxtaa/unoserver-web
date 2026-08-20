@@ -63,6 +63,24 @@ test('/convert/rtf', async () => {
 	expect(rtf).toMatch(/Hello World!/)
 }, 15000)
 
+test('converts files bigger than 1 MiB', async () => {
+	const paragraph = '\\pard\\sa200\\sl276\\slmult1\\f0\\fs22\\lang9 Hello World!\\par\n'
+	const bigRtf = `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0\\fnil\\fcharset0 Calibri;}}\n${paragraph.repeat(30_000)}}`
+
+	expect(bigRtf.length).toBeGreaterThan(1024 * 1024)
+
+	const form = new FormData()
+	form.append('file', new File([bigRtf], 'big.rtf'))
+
+	const response = await testServer.fetch(`convert/rtf`, {
+		method: 'POST',
+		body: form,
+	})
+
+	expect(response.status).toBe(200)
+	await response.blob()
+}, 60000)
+
 test('parallel convertion', async () => {
 	const results = await Promise.allSettled(
 		Array.from({ length: 64 }, () => null).map(async () => {

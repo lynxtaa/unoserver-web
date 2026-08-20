@@ -16,11 +16,13 @@ export function createApp({
 	logLevel,
 	requestIdHeader,
 	requestIdLogLabel,
+	maxFileSize = Infinity,
 }: {
 	basePath?: string
 	logLevel?: LevelWithSilent
 	requestIdHeader?: string
 	requestIdLogLabel?: string
+	maxFileSize?: number
 } = {}): FastifyInstance<Server, IncomingMessage, ServerResponse, FastifyBaseLogger> {
 	const fastify = Fastify({
 		trustProxy: true,
@@ -42,7 +44,8 @@ export function createApp({
 
 	fastify.register(cors, { origin: '*', maxAge: 60 * 60 })
 
-	fastify.register(multipart)
+	// Without an explicit limit @fastify/multipart falls back to Fastify's bodyLimit (1 MiB)
+	fastify.register(multipart, { limits: { fileSize: maxFileSize } })
 
 	fastify.register(swagger, {
 		swagger: {
