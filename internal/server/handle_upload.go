@@ -1,6 +1,7 @@
-package http
+package server
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"log/slog"
@@ -51,7 +52,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	slog.InfoContext(ctx, "file uploaded", "path", srcPath)
 
-	targetPath, err := s.application.ConvertFile.Handle(ctx, srcPath, format, converter.ConvertOptions{
+	targetPath, err := s.convertFile(ctx, srcPath, format, converter.ConvertOptions{
 		Filter: filter,
 	})
 	if err != nil {
@@ -82,7 +83,11 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", contentType(filepath.Ext(targetPath)))
+	// The image ships a system mime database, so LibreOffice formats resolve
+	w.Header().Set("Content-Type", cmp.Or(
+		mime.TypeByExtension(filepath.Ext(targetPath)),
+		"application/octet-stream",
+	))
 
 	filename, _ := strings.CutSuffix(filepath.Base(srcPath), filepath.Ext(srcPath))
 	disposition := mime.FormatMediaType("attachment", map[string]string{

@@ -15,11 +15,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lynxtaa/unoserver-web/internal/application"
 	"github.com/lynxtaa/unoserver-web/internal/config"
 	"github.com/lynxtaa/unoserver-web/internal/converter/unoserver"
-	httpserver "github.com/lynxtaa/unoserver-web/internal/http"
 	"github.com/lynxtaa/unoserver-web/internal/httperror"
+	"github.com/lynxtaa/unoserver-web/internal/server"
 )
 
 //go:embed fixtures/1.rtf
@@ -47,8 +46,7 @@ func startTestServerWithConfig(t *testing.T, cfg *config.Config) (*httptest.Serv
 		MaxWorkers: cfg.MaxWorkers,
 	})
 
-	app := application.New(uno)
-	srv := httpserver.NewServer(cfg, app)
+	srv := server.NewServer(cfg, uno)
 	ts := httptest.NewServer(srv.Handler())
 
 	cleanup := func() {

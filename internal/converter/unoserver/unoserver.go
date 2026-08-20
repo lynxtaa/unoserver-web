@@ -173,8 +173,6 @@ func (u *Unoserver) StopServer(ctx context.Context) {
 	slog.InfoContext(ctx, "Unoserver stopped")
 }
 
-var _ converter.Client = (*Unoserver)(nil)
-
 // Convert converts source file to target file
 func (u *Unoserver) Convert(ctx context.Context, from, to string, opts converter.ConvertOptions) error {
 	// Queued requests give up their slot as soon as the client is gone

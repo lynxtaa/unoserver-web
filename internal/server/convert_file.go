@@ -1,33 +1,23 @@
-// Package handler provides application handlers
-package handler
+package server
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
 
 	"github.com/lynxtaa/unoserver-web/internal/converter"
+	"github.com/lynxtaa/unoserver-web/internal/httperror"
 )
-
-// ConvertFileHandler handles file conversion operations
-type ConvertFileHandler struct {
-	converter converter.Client
-}
-
-// NewConvertFileHandler creates a new ConvertFileHandler with the given converter implementation
-func NewConvertFileHandler(converter converter.Client) *ConvertFileHandler {
-	return &ConvertFileHandler{
-		converter: converter,
-	}
-}
 
 // ErrInvalidExtension is returned when a file has no extension
 var ErrInvalidExtension = errors.New("extension is empty")
 
-// Handle converts a file from srcPath to the specified format and returns the target path
-func (c *ConvertFileHandler) Handle(
+// convertFile converts srcPath into the given format, placing the result next to
+// the source file, and returns its path
+func (s *Server) convertFile(
 	ctx context.Context,
 	srcPath string,
 	format string,
@@ -35,8 +25,13 @@ func (c *ConvertFileHandler) Handle(
 ) (targetPath string, err error) {
 	ext := strings.ToLower(filepath.Ext(srcPath))
 	if ext == "" {
-		return "", ErrInvalidExtension
+		return "", httperror.New(
+			ErrInvalidExtension,
+			"can't detect extension for incoming file",
+			http.StatusBadRequest,
+		)
 	}
+
 	pathWithoutExtension := strings.TrimSuffix(srcPath, ext)
 
 	if sameSrcAndTargetFormat := "."+format == ext; sameSrcAndTargetFormat {
@@ -45,7 +40,7 @@ func (c *ConvertFileHandler) Handle(
 
 	targetPath = pathWithoutExtension + "." + format
 
-	if err := c.converter.Convert(ctx, srcPath, targetPath, opts); err != nil {
+	if err := s.converter.Convert(ctx, srcPath, targetPath, opts); err != nil {
 		return "", fmt.Errorf("conversion failed: %w", err)
 	}
 

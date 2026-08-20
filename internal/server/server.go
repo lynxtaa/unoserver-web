@@ -1,12 +1,13 @@
-// Package http handles server creation
-package http
+// Package server handles HTTP server creation
+package server
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
-	"github.com/lynxtaa/unoserver-web/internal/application"
 	"github.com/lynxtaa/unoserver-web/internal/config"
+	"github.com/lynxtaa/unoserver-web/internal/converter"
 	"github.com/lynxtaa/unoserver-web/internal/cors"
 	"github.com/lynxtaa/unoserver-web/internal/httplog"
 	"github.com/lynxtaa/unoserver-web/internal/reqid"
@@ -15,19 +16,24 @@ import (
 
 const documentationPath = "/documentation"
 
+// Converter converts a file on disk into another format
+type Converter interface {
+	Convert(ctx context.Context, from, to string, opts converter.ConvertOptions) error
+}
+
 // Server represents the HTTP server.
 type Server struct {
-	mux         *http.ServeMux
-	application *application.App
-	cfg         *config.Config
+	mux       *http.ServeMux
+	converter Converter
+	cfg       *config.Config
 }
 
 // NewServer creates a new HTTP server with all routes configured.
-func NewServer(cfg *config.Config, application *application.App) *Server {
+func NewServer(cfg *config.Config, converter Converter) *Server {
 	s := &Server{
-		mux:         http.NewServeMux(),
-		application: application,
-		cfg:         cfg,
+		mux:       http.NewServeMux(),
+		converter: converter,
+		cfg:       cfg,
 	}
 
 	basePath := strings.TrimSuffix(cfg.BasePath, "/")

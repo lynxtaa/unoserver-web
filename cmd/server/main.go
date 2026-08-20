@@ -19,11 +19,10 @@ import (
 
 	"github.com/lmittmann/tint"
 	"github.com/lynxtaa/unoserver-web/docs"
-	"github.com/lynxtaa/unoserver-web/internal/application"
 	"github.com/lynxtaa/unoserver-web/internal/config"
 	"github.com/lynxtaa/unoserver-web/internal/converter/unoserver"
-	httpserver "github.com/lynxtaa/unoserver-web/internal/http"
 	"github.com/lynxtaa/unoserver-web/internal/reqid"
+	"github.com/lynxtaa/unoserver-web/internal/server"
 )
 
 const (
@@ -65,9 +64,7 @@ func run() error {
 	// Deferred, so LibreOffice never outlives the server, whatever exit path is taken
 	defer uno.StopServer(context.WithoutCancel(ctx))
 
-	app := application.New(uno)
-
-	httpServer := httpserver.NewServer(cfg, app)
+	httpServer := server.NewServer(cfg, uno)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{
