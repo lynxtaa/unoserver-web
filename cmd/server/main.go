@@ -41,7 +41,7 @@ func run() error {
 
 	var handler slog.Handler
 	if cfg.PrettyLogs {
-		handler = tint.NewHandler(os.Stdout, &tint.Options{
+		handler = tint.NewTextHandler(os.Stdout, &tint.Options{
 			Level:      cfg.LogLevel,
 			TimeFormat: time.Kitchen,
 		})
