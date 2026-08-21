@@ -38,22 +38,30 @@ func NewServer(cfg *config.Config, converter Converter) *Server {
 
 	basePath := strings.TrimSuffix(cfg.BasePath, "/")
 
-	s.mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, basePath+documentationPath+"/index.html", http.StatusFound)
 	})
 
 	// Aliases for URLs served by the previous Fastify implementation
-	s.mux.HandleFunc("GET /documentation/json", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /documentation/json", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, basePath+documentationPath+"/doc.json", http.StatusFound)
 	})
 
-	s.mux.HandleFunc("GET /documentation/static/index.html", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /documentation/static/index.html", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, basePath+documentationPath+"/index.html", http.StatusFound)
 	})
 
-	s.mux.HandleFunc("GET /documentation/{any...}", httpSwagger.WrapHandler)
+	mux.HandleFunc("GET /documentation/{any...}", httpSwagger.WrapHandler)
 
-	s.mux.HandleFunc("POST /convert/{format}", s.handleUpload)
+	mux.HandleFunc("POST /convert/{format}", s.handleUpload)
+
+	if basePath != "" {
+		s.mux.Handle(basePath+"/", http.StripPrefix(basePath, mux))
+	} else {
+		s.mux = mux
+	}
 
 	return s
 }
