@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -52,6 +53,14 @@ func NewServer(cfg *config.Config, converter Converter) *Server {
 		s.mux = mux
 	}
 
+	// Bypass basePath prefixing
+	s.mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("OK")); err != nil {
+			slog.WarnContext(r.Context(), "responding to /health", "error", err)
+		}
+	})
+
 	return s
 }
 
@@ -62,5 +71,13 @@ func (s *Server) Handler() http.Handler {
 	handler = reqid.Middleware(s.cfg.RequestIDHeader)(handler)
 	handler = cors.Middleware(handler)
 
-	return handler
+	// Bypass all middleware (logging, reqid, cors) for health checks
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			s.mux.ServeHTTP(w, r)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	})
+
 }
