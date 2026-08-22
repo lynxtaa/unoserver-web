@@ -12,6 +12,7 @@ import (
 	"github.com/lynxtaa/unoserver-web/internal/cors"
 	"github.com/lynxtaa/unoserver-web/internal/httplog"
 	"github.com/lynxtaa/unoserver-web/internal/reqid"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
@@ -61,6 +62,8 @@ func NewServer(cfg *config.Config, converter Converter) *Server {
 		}
 	})
 
+	s.mux.Handle("GET /metrics", promhttp.Handler())
+
 	return s
 }
 
@@ -71,13 +74,12 @@ func (s *Server) Handler() http.Handler {
 	handler = reqid.Middleware(s.cfg.RequestIDHeader)(handler)
 	handler = cors.Middleware(handler)
 
-	// Bypass all middleware (logging, reqid, cors) for health checks
+	// Bypass all middleware for health checks and metrics
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" {
+		if r.URL.Path == "/health" || r.URL.Path == "/metrics" {
 			s.mux.ServeHTTP(w, r)
 			return
 		}
 		handler.ServeHTTP(w, r)
 	})
-
 }
