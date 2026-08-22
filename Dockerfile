@@ -1,8 +1,15 @@
-FROM node:24.19.0-trixie-slim AS node
+FROM golang:1.26-alpine AS build
 
-FROM ubuntu:26.04
+WORKDIR /src
 
-COPY --from=node /usr/local/ /usr/local/
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/...
+
+FROM ubuntu:26.04 AS base
 
 WORKDIR /app
 
@@ -16,7 +23,7 @@ RUN apt-get update && \
 # Libreoffice
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
-    add-apt-repository ppa:libreoffice/ppa && \
+    add-apt-repository -y ppa:libreoffice/ppa && \
     apt-get update && \
     apt-get install -y --no-install-recommends libreoffice && \
     apt-get remove -y --auto-remove software-properties-common && \
@@ -30,35 +37,30 @@ RUN apt-get update && \
    rm -rf /var/lib/apt/lists/* && \
    libreoffice --version && unoserver --version
 
-RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg && \
-    corepack disable && corepack enable
-
 # Some additional MS fonts for better WMF conversion
 COPY fonts/*.ttf /usr/share/fonts/
 
 RUN fc-cache -f -v
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-
-RUN pnpm fetch
-
-COPY . .
-
-RUN pnpm install --offline
-
-ARG NODE_ENV
-ENV NODE_ENV=$NODE_ENV
-
-RUN if [ "$NODE_ENV" = "production" ] ; \
-  then pnpm run build && rm -rf node_modules && pnpm install --prod --ignore-scripts && pnpm store prune && rm -rf ./src ; \
-  fi
-
 # helper for reaping zombie processes
 ARG TINI_VERSION=0.19.0
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-static /tini
 RUN chmod +x /tini
+
+FROM base AS test
+
+COPY --from=golang:1.26 /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# gcc is required by the race detector
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libc6-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+FROM base AS final
+
+COPY --from=build /out/server /usr/local/bin/server
+
 ENTRYPOINT [ "/tini", "--" ]
-
-CMD [ "node", "-r", "dotenv-safe/config", "build/index.js" ]
-
+CMD [ "server" ]
 EXPOSE 3000

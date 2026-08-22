@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on:
   push:
@@ -6,16 +6,68 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  GOLANGCI_LINT_VERSION: v2.12.2
+
 jobs:
-  tests:
+  lint:
+    name: Format & Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: docker/build-push-action@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          tags: test-image:latest
+          go-version-file: go.mod
+      - name: Check formatting
+        run: |
+          if [ -n "$(gofmt -s -l .)" ]; then
+            echo "The following files are not formatted:"
+            gofmt -s -l .
+            exit 1
+          fi
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${{ env.GOLANGCI_LINT_VERSION }}
+      - name: Run golangci-lint
+        run: golangci-lint run
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build test image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: test
+          load: true
           push: false
-      - uses: addnab/docker-run-action@v3
+          tags: test-image:latest
+      - name: Run tests
+        run: docker run --rm --volume ${{ github.workspace }}:/app --workdir /app test-image:latest go test -race -count=1 -v -coverpkg=./internal/... -coverprofile=coverage.txt -covermode=atomic ./...
+      - name: Upload coverage
+        uses: codecov/codecov-action@v7
         with:
-          image: test-image:latest
-          run: pnpm run validate && pnpm run build && pnpm run test:coverage
-      - uses: codecov/codecov-action@v4
+          files: ./coverage.txt
+        continue-on-error: true
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Build binary
+        run: go build -trimpath -ldflags="-s -w" -o build/server ./cmd/server
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          tags: lynxtaa/unoserver-web:test

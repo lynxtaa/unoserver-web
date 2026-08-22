@@ -1,28 +1,23 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.166.1/containers/docker-existing-dockerfile
 {
-	"name": "Existing Dockerfile",
-
-	// Sets the run context to one level up instead of the .devcontainer folder.
-	"context": "..",
-
-	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
-	"dockerFile": "../Dockerfile",
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"name": "unoserver-web",
+	"build": {
+		"dockerfile": "../Dockerfile",
+		"context": "..",
+		"target": "test"
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "1.26",
+			"golangciLintVersion": "2.12.2"
+		},
+		"ghcr.io/devcontainers/features/git:1": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": ["golang.go"]
+		}
+	},
 	"forwardPorts": [3000],
-
-	// Uncomment the next line to run commands after the container is created - for example installing curl.
-	"postCreateCommand": "apt-get update && apt-get install -y git",
-
-	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
-
-	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust
-	// "runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
-
-	// Uncomment to use the Docker CLI from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker.
-	// "mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
-
-	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
+	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+	"runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"]
 }

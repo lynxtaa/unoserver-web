@@ -1,0 +1,42 @@
+version: '2'
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - revive
+    - gosec
+    - misspell
+    - unconvert
+    - unparam
+    - gocritic
+    - gocyclo
+    - bodyclose
+    - noctx
+    - errorlint
+    - gocheckcompilerdirectives
+    - copyloopvar
+    - intrange
+  exclusions:
+    rules:
+      - linters:
+          - errcheck
+        source: '^\s*defer\s+'
+      - linters:
+          - gosec
+        text: 'G204'
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
