@@ -14,8 +14,6 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
-const documentationPath = "/documentation"
-
 // Converter converts a file on disk into another format
 type Converter interface {
 	Convert(ctx context.Context, from, to string, opts converter.ConvertOptions) error
@@ -40,17 +38,8 @@ func NewServer(cfg *config.Config, converter Converter) *Server {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, basePath+documentationPath+"/index.html", http.StatusFound)
-	})
-
-	// Aliases for URLs served by the previous Fastify implementation
-	mux.HandleFunc("GET /documentation/json", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, basePath+documentationPath+"/doc.json", http.StatusFound)
-	})
-
-	mux.HandleFunc("GET /documentation/static/index.html", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, basePath+documentationPath+"/index.html", http.StatusFound)
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, basePath+"/documentation/index.html", http.StatusFound)
 	})
 
 	mux.HandleFunc("GET /documentation/{any...}", httpSwagger.WrapHandler)
