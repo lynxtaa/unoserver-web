@@ -20,7 +20,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends software-properties-common && \
     add-apt-repository -y ppa:libreoffice/ppa && \
     apt-get update && \
-    apt-get install -y --no-install-recommends libreoffice python3-pip && \
+    apt-get install -y --no-install-recommends libreoffice-nogui python3-pip && \
     pip install --no-cache-dir unoserver --break-system-packages && \
     apt-get remove -y --auto-remove software-properties-common python3-pip && \
     rm -rf /var/lib/apt/lists/* /root/.cache && \
