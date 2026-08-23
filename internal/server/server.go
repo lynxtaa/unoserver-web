@@ -26,6 +26,7 @@ type Server struct {
 	mux       *http.ServeMux
 	converter Converter
 	cfg       *config.Config
+	basePath  string
 }
 
 // NewServer creates a new HTTP server with all routes configured.
@@ -34,14 +35,13 @@ func NewServer(cfg *config.Config, converter Converter) *Server {
 		mux:       http.NewServeMux(),
 		converter: converter,
 		cfg:       cfg,
+		basePath:  strings.TrimSuffix(cfg.BasePath, "/"),
 	}
-
-	basePath := strings.TrimSuffix(cfg.BasePath, "/")
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, basePath+"/documentation/index.html", http.StatusFound)
+		http.Redirect(w, r, s.basePath+"/documentation/index.html", http.StatusFound)
 	})
 
 	mux.HandleFunc("GET /documentation/{any...}", httpSwagger.WrapHandler)
@@ -57,8 +57,8 @@ func NewServer(cfg *config.Config, converter Converter) *Server {
 
 	mux.HandleFunc("POST /convert/{format}", s.handleUpload)
 
-	if basePath != "" {
-		s.mux.Handle(basePath+"/", http.StripPrefix(basePath, mux))
+	if s.basePath != "" {
+		s.mux.Handle(s.basePath+"/", http.StripPrefix(s.basePath, mux))
 	} else {
 		s.mux = mux
 	}
@@ -73,5 +73,13 @@ func (s *Server) Handler() http.Handler {
 	handler = reqid.Middleware(s.cfg.RequestIDHeader)(handler)
 	handler = cors.Middleware(handler)
 
-	return handler
+	// Bypass all middleware for health checks and metrics
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, s.basePath)
+		if path == "/health" || path == "/metrics" {
+			s.mux.ServeHTTP(w, r)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	})
 }
