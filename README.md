@@ -18,6 +18,15 @@ curl \
 -o my.pdf
 ```
 
+## Endpoints
+
+| Route                    | Description                                         |
+| ------------------------ | --------------------------------------------------- |
+| `POST /convert/{format}` | Converts the uploaded `file` to `format`            |
+| `GET /documentation/`    | Swagger UI                                          |
+| `GET /health`            | Health check, returns `200 OK`                      |
+| `GET /metrics`           | Go runtime and process metrics in Prometheus format |
+
 ## Container Environment
 
 | Variable             | Description                                                                | Default |
