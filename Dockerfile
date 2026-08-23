@@ -15,27 +15,16 @@ WORKDIR /app
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Common libraries
+# Libreoffice + unoserver
 RUN apt-get update && \
-    apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/*
-
-# Libreoffice
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
+    apt-get install -y --no-install-recommends software-properties-common && \
     add-apt-repository -y ppa:libreoffice/ppa && \
     apt-get update && \
-    apt-get install -y --no-install-recommends libreoffice && \
-    apt-get remove -y --auto-remove software-properties-common && \
-    rm -rf /var/lib/apt/lists/*
-
-# Unoserver
-RUN apt-get update && \
-   apt-get install -y python3-pip && \
-   pip install unoserver --break-system-packages && \
-   apt-get remove -y --auto-remove python3-pip && \
-   rm -rf /var/lib/apt/lists/* && \
-   libreoffice --version && unoserver --version
+    apt-get install -y --no-install-recommends libreoffice python3-pip && \
+    pip install --no-cache-dir unoserver --break-system-packages && \
+    apt-get remove -y --auto-remove software-properties-common python3-pip && \
+    rm -rf /var/lib/apt/lists/* /root/.cache && \
+    libreoffice --version && unoserver --version
 
 # Some additional MS fonts for better WMF conversion
 COPY fonts/*.ttf /usr/share/fonts/
@@ -44,8 +33,7 @@ RUN fc-cache -f -v
 
 # helper for reaping zombie processes
 ARG TINI_VERSION=0.19.0
-ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-static /tini
-RUN chmod +x /tini
+ADD --chmod=755 https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-static /tini
 
 FROM base AS test
 
