@@ -46,6 +46,15 @@ func NewServer(cfg *config.Config, converter Converter) *Server {
 
 	mux.HandleFunc("GET /documentation/{any...}", httpSwagger.WrapHandler)
 
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("OK")); err != nil {
+			slog.WarnContext(r.Context(), "responding to /health", "error", err)
+		}
+	})
+
+	mux.Handle("GET /metrics", promhttp.Handler())
+
 	mux.HandleFunc("POST /convert/{format}", s.handleUpload)
 
 	if basePath != "" {
@@ -53,16 +62,6 @@ func NewServer(cfg *config.Config, converter Converter) *Server {
 	} else {
 		s.mux = mux
 	}
-
-	// Bypass basePath prefixing
-	s.mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte("OK")); err != nil {
-			slog.WarnContext(r.Context(), "responding to /health", "error", err)
-		}
-	})
-
-	s.mux.Handle("GET /metrics", promhttp.Handler())
 
 	return s
 }
@@ -74,12 +73,5 @@ func (s *Server) Handler() http.Handler {
 	handler = reqid.Middleware(s.cfg.RequestIDHeader)(handler)
 	handler = cors.Middleware(handler)
 
-	// Bypass all middleware for health checks and metrics
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" || r.URL.Path == "/metrics" {
-			s.mux.ServeHTTP(w, r)
-			return
-		}
-		handler.ServeHTTP(w, r)
-	})
+	return handler
 }
